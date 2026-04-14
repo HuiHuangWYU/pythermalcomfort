@@ -20,7 +20,7 @@ from pythermalcomfort.models.sports_heat_stress_risk import (
         # Very high temperature (extreme risk)
         (60, 20, 40, 2, Sports.MTB, 4.0),
         # Different sport - running at high temp (extreme risk)
-        (35, 35, 50, 0.5, Sports.RUNNING, 4.0),
+        (35, 35, 50, 0.5, Sports.RUNNING, 2.1),
     ],
 )
 def test_sports_heat_stress_risk_scalar(tdb, tr, rh, vr, sport, expected_risk):
@@ -38,6 +38,44 @@ def test_sports_heat_stress_risk_scalar(tdb, tr, rh, vr, sport, expected_risk):
     # Verify expected risk level - convert to float for comparison
     risk_value = float(np.asarray(result.risk_level_interpolated).item())
     assert risk_value == pytest.approx(expected_risk, rel=0.01)
+
+
+def test_sports_heat_stress_risk_array_clamps_vr_to_sport_minimum():
+    """Test that array wind speed inputs are clamped elementwise to the sport minimum."""
+    tdb = np.array([30, 35, 40])
+    tr = np.array([30, 35, 40])
+    rh = np.array([40, 50, 60])
+    vr = np.array([0.5, 2.0, 2.5])
+    vr_effective = np.maximum(vr, Sports.RUNNING.vr)
+
+    result = sports_heat_stress_risk(tdb=tdb, tr=tr, rh=rh, vr=vr, sport=Sports.RUNNING)
+    expected = sports_heat_stress_risk(
+        tdb=tdb,
+        tr=tr,
+        rh=rh,
+        vr=vr_effective,
+        sport=Sports.RUNNING,
+    )
+
+    np.testing.assert_allclose(
+        np.asarray(result.risk_level_interpolated, dtype=float),
+        np.asarray(expected.risk_level_interpolated, dtype=float),
+    )
+    np.testing.assert_allclose(
+        np.asarray(result.t_medium, dtype=float),
+        np.asarray(expected.t_medium, dtype=float),
+    )
+    np.testing.assert_allclose(
+        np.asarray(result.t_high, dtype=float),
+        np.asarray(expected.t_high, dtype=float),
+    )
+    np.testing.assert_allclose(
+        np.asarray(result.t_extreme, dtype=float),
+        np.asarray(expected.t_extreme, dtype=float),
+    )
+    np.testing.assert_array_equal(
+        np.asarray(result.recommendation), np.asarray(expected.recommendation)
+    )
 
 
 def test_sports_heat_stress_risk_array():
@@ -212,13 +250,12 @@ def test_sports_heat_stress_risk_recommendations():
     result_low = sports_heat_stress_risk(
         tdb=20, tr=20, rh=50, vr=0.5, sport=Sports.RUNNING
     )
-    # Convert numpy array to string for comparison
     assert "Increase hydration & modify clothing" == str(result_low.recommendation)
     assert 1.0 <= result_low.risk_level_interpolated < 2.0
 
     # Test medium risk (risk level 2.0-3.0)
     result_medium = sports_heat_stress_risk(
-        tdb=30, tr=30, rh=50, vr=0.5, sport=Sports.RUNNING
+        tdb=35, tr=34, rh=30, vr=0.5, sport=Sports.RUNNING
     )
     assert 2.0 <= result_medium.risk_level_interpolated < 3.0
     assert "Increase frequency and/or duration of rest breaks" == str(
@@ -227,14 +264,14 @@ def test_sports_heat_stress_risk_recommendations():
 
     # Test high risk (risk level 3.0-4.0)
     result_high = sports_heat_stress_risk(
-        tdb=35, tr=34, rh=30, vr=0.5, sport=Sports.RUNNING
+        tdb=40, tr=35, rh=30, vr=0.5, sport=Sports.RUNNING
     )
     assert 3.0 <= result_high.risk_level_interpolated < 4.0
     assert "Apply active cooling strategies" == str(result_high.recommendation)
 
     # Test medium risk near high boundary (risk level 2.0-3.0)
     result_high = sports_heat_stress_risk(
-        tdb=34, tr=34, rh=30, vr=0.5, sport=Sports.RUNNING
+        tdb=38, tr=38, rh=40, vr=0.5, sport=Sports.RUNNING
     )
     assert 2.0 <= result_high.risk_level_interpolated < 3.0
     assert "Increase frequency and/or duration of rest breaks" == str(

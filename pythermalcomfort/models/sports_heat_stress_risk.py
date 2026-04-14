@@ -112,12 +112,14 @@ def sports_heat_stress_risk(
     rh : float or list of float
         Relative humidity [%].
     vr : float or list of float
-        Relative air speed [m/s].
+        Relative air speed [m/s]. Values lower than ``sport.vr`` are set to
+        ``sport.vr`` before the risk calculation.
     sport : _SportsValues
         Sport-specific activity dataclass with fields ``clo`` (clothing insulation),
-        ``met`` (metabolic rate), ``vr`` (relative air speed), and ``duration`` (activity duration).
-        Use one of the predefined entries from the :py:class:`Sports` class, e.g., ``Sports.RUNNING``,
-        ``Sports.SOCCER``, ``Sports.TENNIS``, etc.
+        ``met`` (metabolic rate), ``vr`` (minimum relative air speed),
+        and ``duration`` (activity duration). Use one of the predefined entries from
+        the :py:class:`Sports` class, e.g., ``Sports.RUNNING``, ``Sports.SOCCER``,
+        ``Sports.TENNIS``, etc.
 
     Returns
     -------
@@ -146,27 +148,29 @@ def sports_heat_stress_risk(
 
         # Example 1: Single condition for running
         result = sports_heat_stress_risk(
-            tdb=35, tr=35, rh=40, vr=0.1, sport=Sports.RUNNING
+            tdb=35, tr=35, rh=40, vr=2.0, sport=Sports.RUNNING
         )
-        print(result.risk_level_interpolated)  # 4.0 (Extreme risk)
-        print(result.t_medium)  # 23.0 (Temperature threshold for medium risk)
-        print(result.t_high)  # 25.0 (Temperature threshold for high risk)
-        print(result.t_extreme)  # 28.6 (Temperature threshold for extreme risk)
-        print(result.recommendation)  # "Consider suspending play"
+        print(result.risk_level_interpolated)  # 2.1 (Medium risk)
+        print(result.t_medium)  # 34.5 (Temperature threshold for medium risk)
+        print(result.t_high)  # 39.0 (Temperature threshold for high risk)
+        print(result.t_extreme)  # 41.6 (Temperature threshold for extreme risk)
+        print(
+            result.recommendation
+        )  # "Increase frequency and/or duration of rest breaks"
 
         # Example 2: Array inputs for multiple conditions
         result = sports_heat_stress_risk(
             tdb=[30, 35, 40],
             tr=[30, 35, 40],
             rh=[50, 50, 50],
-            vr=[0.5, 0.5, 0.5],
+            vr=[1.0, 1.0, 1.5],
             sport=Sports.SOCCER,
         )
         print(result.risk_level_interpolated)  # Array of risk levels
 
         # Example 3: Different sports
         result_tennis = sports_heat_stress_risk(
-            tdb=33, tr=70, rh=60, vr=0.1, sport=Sports.TENNIS
+            tdb=33, tr=70, rh=60, vr=0.75, sport=Sports.TENNIS
         )
         result_cycling = sports_heat_stress_risk(
             tdb=33, tr=70, rh=60, vr=3.0, sport=Sports.CYCLING
@@ -181,6 +185,7 @@ def sports_heat_stress_risk(
     tr = np.asarray(inputs.tr, dtype=float)
     rh = np.asarray(inputs.rh, dtype=float)
     vr = np.asarray(inputs.vr, dtype=float)
+    vr_effective = np.maximum(vr, sport.vr)
 
     # Vectorize the calculation function to handle arrays
     # Returns (risk_level_interpolated, t_medium, t_high, t_extreme, recommendation) for each input
@@ -188,7 +193,7 @@ def sports_heat_stress_risk(
         _calc_risk_single_value, otypes=[float, float, float, float, str]
     )
     risk_levels, t_mediums, t_highs, t_extremes, recommendations = vectorized_calc(
-        tdb=tdb, tr=tr, rh=rh, vr=vr, sport=sport
+        tdb=tdb, tr=tr, rh=rh, vr=vr_effective, sport=sport
     )
 
     return SportsHeatStressRisk(

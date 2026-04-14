@@ -1256,6 +1256,8 @@ class SportsHeatStressInputs(BaseInputs):
         Relative humidity in percent (%). Values must be in the interval [0, 100].
     vr : float or array-like
         Relative air speed in metres per second (m/s). Values must be non-negative.
+        Values lower than ``sport.vr`` are accepted and set to ``sport.vr`` by
+        :func:`pythermalcomfort.models.sports_heat_stress_risk.sports_heat_stress_risk`.
     sport : _SportsValues
         Sport-specific parameters. Use one of the entries from
         :class:`pythermalcomfort.models.sports_heat_stress_risk.Sports` (e.g. ``Sports.RUNNING``).

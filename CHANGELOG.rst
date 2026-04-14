@@ -1,10 +1,11 @@
 Changelog
 =========
 
-3.9.2 (2026-04-13)
+3.9.2 (2026-04-14)
 ------------------
 
 * Updated `sports_heat_stress_risk` so `risk_level_interpolated` now uses `1.0-4.0` instead of `0.0-3.0`.
+* Updated `sports_heat_stress_risk` to enforce the sport-specific minimum air speed (`sport.vr`).
 
 3.9.1 (2026-02-25)
 ------------------
