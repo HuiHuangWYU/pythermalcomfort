@@ -112,8 +112,10 @@ def sports_heat_stress_risk(
     rh : float or list of float
         Relative humidity [%].
     vr : float or list of float
-        Relative air speed [m/s]. Values lower than ``sport.vr`` are set to
-        ``sport.vr`` before the risk calculation.
+        Relative air speed [m/s]. Please note that if the input vr is lower than
+        the self generated wind speed for each sport defined in the
+        :py:class:`Sports` class, then the sport.vr will be used for the
+        calculation.
     sport : _SportsValues
         Sport-specific activity dataclass with fields ``clo`` (clothing insulation),
         ``met`` (metabolic rate), ``vr`` (minimum relative air speed),
