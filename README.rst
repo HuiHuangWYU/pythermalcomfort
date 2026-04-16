@@ -6,87 +6,79 @@
 pythermalcomfort
 ================
 
-The ``pythermalcomfort`` Python package is a comprehensive toolkit for calculating
-thermal comfort indices, heat/cold stress metrics, and thermophysiological
-responses based on international standards and peer-reviewed research. Designed
-for researchers, engineers, and building-science professionals, it simplifies
-complex calculations while promoting accuracy and standards compliance.
+``pythermalcomfort`` is a Python toolkit for computing thermal comfort indices,
+heat/cold stress metrics, and thermophysiological responses.
+Its implementations adhere to international standards and peer-reviewed research,
+offering researchers, engineers, and building scientists reliable,
+standards-compliant calculations without the burden of implementing them manually.
 
-Cite pythermalcomfort
-=====================
+.. important::
+   When ``pythermalcomfort`` informs published work, please cite it as:
 
-If you use ``pythermalcomfort`` in your research, please cite it as follows:
+   .. code-block:: text
 
-.. code-block:: text
-
-   Tartarini, F., Schiavon, S., 2020.
-   pythermalcomfort: A Python package for thermal comfort research.
-   SoftwareX 12, 100578.
-   https://doi.org/10.1016/j.softx.2020.100578
+      Tartarini, F., Schiavon, S., 2020.
+      pythermalcomfort: A Python package for thermal comfort research.
+      SoftwareX 12, 100578.
+      https://doi.org/10.1016/j.softx.2020.100578
 
 Key Features
 ============
 
-- **Thermal Comfort Calculations**:
-  Supports multiple models, including **PMV**, **PPD**, **adaptive comfort**, and
-  **SET**.
-- **Heat and Cold Stress Indices**:
-  Calculate **UTCI**, **Heat Index**, **Wind Chill Index**, and **Humidex**.
-- **Thermophysiological Models**:
-  Includes the **two-node (Gagge)** and **multinode (JOS-3)** models to estimate
-  physiological responses such as core temperature, skin temperature, and skin
-  wettedness.
-- **Standards Compliance**:
-  Implements calculations based on **ASHRAE 55**, **ISO 7730**, **EN 16798**, and
-  more.
-- **Ease of Use**:
-  Intuitive API for seamless integration into Python projects.
-- **Extensive Documentation**:
-  Detailed guides, examples, and tutorials.
-- **Active Development**:
-  Regularly updated with new features, improvements, and bug fixes.
-- **Open Source**:
-  Licensed under the MIT License.
+- **Thermal Comfort Models** – PMV/PPD, adaptive comfort assessments,
+  SET, and more bundled into a single API surface.
+- **Heat & Cold Stress Indices** – UTCI, Heat Index, Wind Chill, Humidex, and
+  other commonly-referenced metrics.
+- **Thermophysiological Modeling** – two-node (Gagge) and multinode (JOS-3)
+  models for estimating core/skin temperatures and skin wettedness.
+- **Standards Compliance** – Calculations based on ASHRAE 55, ISO 7730,
+  EN 16798, and supporting references.
+- **Vectorized Inputs** – Accepts scalars, lists, or NumPy arrays; most
+  functions broadcast across input arrays automatically.
+- **Pythonic API** – Simple, documented entry points that plug into analysis
+  workflows and pipelines.
+- **Rich Documentation** – Tutorials, examples, and reference guides for each
+  supported model and index.
+- **Active Development** – Frequent releases, new features, and responsive
+  issue resolution.
+- **Open Source** – MIT licensed and developed transparently on GitHub.
 
-Why Use pythermalcomfort?
-=========================
+Why Choose pythermalcomfort?
+============================
 
-- **Accurate Assessments**:
-  Reliable thermal comfort and stress evaluations for diverse environments.
-- **Time-Saving**:
-  Automates complex calculations, saving time and effort.
-- **Versatility**:
-  Useful for building science, HVAC design, environmental design, thermal
-  physiology, sports science, and biometeorology.
-- **Enhanced Decision-Making**:
-  Supports data-driven decisions for HVAC systems, building performance, and
-  occupant comfort.
+- **Precision** – Accurate evaluations of comfort and stress that engineers can
+  trust.
+- **Efficiency** – Eliminates repetitive code so teams can focus on insights,
+  not implementation details.
+- **Versatility** – Useful in building science, HVAC design, biometeorology,
+  sports science, and thermal physiology.
+- **Evidence-Based Decisions** – Supports data-driven HVAC sizing, occupant
+  comfort strategies, and performance benchmarking.
 
 Installation
 ============
 
-Install ``pythermalcomfort`` via pip:
+Install from PyPI:
 
 .. code-block:: bash
 
    pip install pythermalcomfort
 
-For advanced installation options, refer to the
-`Installation Instructions <https://pythermalcomfort.readthedocs.io/en/latest/installation.html>`_.
+For alternative installation instructions, including development builds and
+optional dependencies, see the
+`official docs <https://pythermalcomfort.readthedocs.io/en/latest/installation.html>`_.
 
 Requirements
 ============
 
-A typical environment includes:
-
-- Python 3.9+ (or the minimum version used in CI)
-- NumPy, SciPy, pandas (installed automatically as package dependencies)
-- Optional: Matplotlib / other plotting libraries for examples and visualizations
+- Python 3.10+
+- NumPy, SciPy, pandas (installed automatically)
+- Optional: Matplotlib or other plotting libraries for visualizations
 
 Quick Start
 ===========
 
-Get started with ``pythermalcomfort`` in just a few lines of code:
+A few lines are all you need to get started:
 
 .. code-block:: python
 
@@ -94,57 +86,55 @@ Get started with ``pythermalcomfort`` in just a few lines of code:
 
    # Calculate PMV and PPD using ISO 7730 standard
    result = pmv_ppd_iso(
-       tdb=25,  # Dry Bulb Temperature in °C
-       tr=25,  # Mean Radiant Temperature in °C
-       vr=0.1,  # Relative air speed in m/s
-       rh=50,  # Relative Humidity in %
-       met=1.4,  # Metabolic rate in met
-       clo=0.5,  # Clothing insulation in clo
-       model="7730-2005"  # Year of the ISO standard
+       tdb=25,   # dry-bulb temperature in °C
+       tr=25,    # mean radiant temperature in °C
+       vr=0.1,   # relative air speed in m/s
+       rh=50,    # relative humidity in %
+       met=1.4,  # metabolic rate in met
+       clo=0.5,  # clothing insulation in clo
+       model="7730-2005",
    )
    print(f"PMV: {result.pmv}, PPD: {result.ppd}")
 
    # Calculate UTCI for heat stress assessment
-   utci_value = utci(tdb=30, tr=30, v=0.5, rh=50)
-   print(utci_value)
+   result = utci(tdb=30, tr=30, v=0.5, rh=50)
+   print(result.utci)
 
-For more examples and detailed usage, check out models and indices in the models section of the documentation.
+   # Most functions also accept arrays for bulk calculations
+   result = utci(tdb=[28, 30, 35], tr=[28, 30, 35], v=0.5, rh=50)
+   print(result.utci)
+
+For a full list of models and indices, see the
+`API reference <https://pythermalcomfort.readthedocs.io/en/latest/>`_.
 
 Support pythermalcomfort
 ========================
 
-If you find this project useful, consider supporting the maintainers. Maintaining
-an open-source scientific package requires time for development, review, CI,
-and user support.
+Maintaining an open-source scientific package takes time. You can help by:
 
-Ways to support
----------------
+- `Sponsoring on GitHub <https://github.com/sponsors/FedericoTartarini>`_
+- Submitting code, docs, or tests via a pull request
+- Reporting reproducible bugs or feature requests in the
+  `issue tracker <https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/issues>`_
+- Assisting with testing, translations, or PR reviews
+- Starring or sharing the project to raise awareness
 
-- Sponsor via GitHub: https://github.com/sponsors/FedericoTartarini
-- Contribute code, tests, or documentation: open a PR against `pythermalcomfort`
-- Report bugs or request features with a minimal reproduction in `issues`
-- Help with testing, translations, or reviewing pull requests
-- Star or share the project to increase visibility
+Contributions
+=============
 
-Any support—financial or contribution-based—is appreciated and helps keep the
-project healthy.
-
-Contribute
-==========
-
-We welcome contributions! Whether reporting a bug, suggesting a feature, or
-submitting a pull request, your input helps make ``pythermalcomfort`` better for
-everyone. See the `contributing guide <https://pythermalcomfort.readthedocs.io/en/latest/contributing.html>`_ for full contribution instructions.
+We welcome all contributions. Please read the
+`contributing guide <https://pythermalcomfort.readthedocs.io/en/latest/contributing.html>`_
+before you start.
 
 Quick checklist
 ---------------
 
-* Open an issue first for larger features to discuss scope and design.
-* Fork the repo and create a feature branch for your work.
-* Add tests for new behavior and run the test suite locally.
-* Run linters and formatters and fix reported issues.
-* Update documentation and changelog entries for public API changes.
-* Submit a clear, focused pull request referencing any related issues.
+* Open an issue when planning large changes to align on scope.
+* Fork the repo and create a feature branch.
+* Add or update tests for new behavior.
+* Run linters/formatters and fix the reported issues.
+* Update docs or the changelog when the public API changes.
+* Submit clear, focused PRs with related issues linked.
 
 Common commands
 ---------------
@@ -159,14 +149,8 @@ Common commands
 
     # create a branch and work on it
     git checkout -b Feature/awesome-feature
-
-    # run the full test matrix (may be slow)
-    tox
-
-    # run a single test env locally (replace py312 with the env you want)
-    tox -e py312
-
-    # run a subset of pytest tests
+    tox  # run the full matrix (slow)
+    tox -e py312  # run a single env
     pytest -k test_name_fragment
 
     # fix linting/formatting
@@ -179,28 +163,29 @@ Common commands
     git commit -m "feat: short description of change"
     git push origin Feature/awesome-feature
 
-Where to get help
------------------
+Getting Help
+============
 
-* Open an issue on GitHub with a minimal reproduction for bugs.
+* Open an issue on GitHub with a minimal reproduction in the
+  `issue tracker <https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/issues>`_.
 * Ask questions in PR comments for implementation guidance.
-* See the `contribution guidelines <https://pythermalcomfort.readthedocs.io/en/latest/contributing.html>`_ for detailed guidance on testing,
-  documentation, and changelog expectations.
-* For API reference and examples, consult the online docs:
+* Review the
+  `contribution guidelines <https://pythermalcomfort.readthedocs.io/en/latest/contributing.html>`_
+  for testing, documentation, and changelog expectations.
+* Consult the API reference and examples at
   https://pythermalcomfort.readthedocs.io/en/latest/
 
-Documentation
--------------
+Changelog
+=========
 
-Detailed docs, examples and API references are available at:
-https://pythermalcomfort.readthedocs.io/en/latest/
+A full list of changes per release is available in the
+`CHANGELOG <https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/blob/master/CHANGELOG.rst>`_.
 
 License
 =======
 
 ``pythermalcomfort`` is released under the MIT License.
 
-=====
 Stats
 =====
 
@@ -227,9 +212,9 @@ Stats
     :target: https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/actions/workflows/build-test-publish.yml
     :alt: Tests to ensure pythermalcomfort works on different Python versions and OS
 
-.. |package-health| image:: https://img.shields.io/snyk/vulnerability-score/pip/pythermalcomfort.svg
-    :target: https://security.snyk.io/package/pip/pythermalcomfort
-    :alt: pythermalcomfort
+.. |package-health| image:: https://img.shields.io/badge/Snyk_security-monitored-8A2BE2
+   :target: https://security.snyk.io/package/pip/pythermalcomfort
+   :alt: Snyk Security Badge
 
 .. |license| image:: https://img.shields.io/pypi/l/pythermalcomfort?color=brightgreen
     :target: https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/blob/master/LICENSE
