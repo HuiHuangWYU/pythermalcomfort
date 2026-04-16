@@ -273,7 +273,7 @@ def test_sports_heat_stress_risk_recommendations():
     result = sports_heat_stress_risk(tdb=38, tr=38, rh=40, vr=0.5, sport=Sports.RUNNING)
     assert 2.0 <= result.risk_level_interpolated < 3.0
     assert "Increase frequency and/or duration of rest breaks" == str(
-        result_high.recommendation
+        result.recommendation
     )
 
     # Test extreme risk (risk level = 4.0)
