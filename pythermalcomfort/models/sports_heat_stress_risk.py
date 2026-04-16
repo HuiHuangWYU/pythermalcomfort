@@ -112,10 +112,9 @@ def sports_heat_stress_risk(
     rh : float or list of float
         Relative humidity [%].
     vr : float or list of float
-        Relative air speed [m/s]. Please note that if the input vr is lower than
-        the self generated wind speed for each sport defined in the
-        :py:class:`Sports` class, then the sport.vr will be used for the
-        calculation.
+        Relative air speed [m/s]. Relative air speed [m/s]. If the input ``vr``
+        is lower than the minimum relative air speed defined for the selected
+        sport (``sport.vr``), then ``sport.vr`` will be used for the calculation.
     sport : _SportsValues
         Sport-specific activity dataclass with fields ``clo`` (clothing insulation),
         ``met`` (metabolic rate), ``vr`` (minimum relative air speed),
@@ -170,7 +169,16 @@ def sports_heat_stress_risk(
         )
         print(result.risk_level_interpolated)  # Array of risk levels
 
-        # Example 3: Different sports
+        # Example 3: vr clamping — input vr (0.5 m/s) is below Sports.RUNNING.vr
+        # (2.0 m/s), so the calculation uses sport.vr=2.0 m/s as the effective wind speed.
+        result_clamped = sports_heat_stress_risk(
+            tdb=35, tr=35, rh=40, vr=0.5, sport=Sports.RUNNING
+        )
+        # Because vr is clamped to 2.0 m/s (same as Example 1), the output matches:
+        print(result_clamped.risk_level_interpolated)  # same as Example 1
+        print(result_clamped.t_medium)  # same as Example 1
+
+        # Example 4: Different sports
         result_tennis = sports_heat_stress_risk(
             tdb=33, tr=70, rh=60, vr=0.75, sport=Sports.TENNIS
         )
