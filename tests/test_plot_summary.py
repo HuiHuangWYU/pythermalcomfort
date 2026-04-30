@@ -7,8 +7,8 @@ import pytest
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from pythermalcomfort.plots.summary import Summary, SummaryPlotResult
-from pythermalcomfort.plots.threshold import ThresholdsConfig
+from pythermalcomfort.plots.matplotlib.summary import Summary, SummaryPlotResult
+from pythermalcomfort.plots.matplotlib.threshold import ThresholdsConfig
 
 PMV_THRESHOLDS = ThresholdsConfig(thresholds=[-0.5, 0.5])
 

@@ -6,7 +6,7 @@ import matplotlib
 import numpy as np
 import pytest
 
-from pythermalcomfort.plots.threshold import (
+from pythermalcomfort.plots.matplotlib.threshold import (
     Threshold,
     ThresholdPlotResult,
     ThresholdsConfig,

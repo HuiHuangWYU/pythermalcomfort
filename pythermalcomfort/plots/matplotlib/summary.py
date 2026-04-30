@@ -1,4 +1,4 @@
-"""Review-only class-based summary plotting prototype."""
+"""Class-based summary plotting for threshold regions."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import pandas as pd
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-from pythermalcomfort.plots._shared import (
+from pythermalcomfort.plots.matplotlib._shared import (
     ThresholdsConfig,
     _build_region_labels,
     _is_light_color,
@@ -22,6 +22,8 @@ from pythermalcomfort.plots._shared import (
 
 @dataclass
 class SummaryPlotResult:
+    """Container with handles and processed data from :meth:`Summary.plot`."""
+
     fig: Figure
     ax: Axes
     data: pd.DataFrame
@@ -30,6 +32,7 @@ class SummaryPlotResult:
 
 
 def _validate_dataframe(df: pd.DataFrame) -> None:
+    """Validate input DataFrame for summary plotting."""
     if not isinstance(df, pd.DataFrame):
         raise TypeError("df must be a pandas DataFrame.")
     if df.empty:
@@ -37,6 +40,7 @@ def _validate_dataframe(df: pd.DataFrame) -> None:
 
 
 def _validate_output_column(df: pd.DataFrame, output: str) -> str:
+    """Validate output column name and ensure it exists."""
     if not isinstance(output, str):
         raise TypeError("output must be a string.")
 
@@ -51,6 +55,19 @@ def _validate_output_column(df: pd.DataFrame, output: str) -> str:
     return output_name
 
 
+def _validate_output_values(df: pd.DataFrame, output_column: str) -> None:
+    """Ensure output column contains numeric finite values only."""
+    numeric_values = pd.to_numeric(df[output_column], errors="coerce")
+    invalid_mask = ~numeric_values.notna()
+    if invalid_mask.any():
+        invalid_count = int(invalid_mask.sum())
+        msg = (
+            f"output column '{output_column}' contains {invalid_count} non-numeric "
+            "or missing value(s)."
+        )
+        raise ValueError(msg)
+
+
 def _categorize_output_values(
     df_copy: pd.DataFrame,
     *,
@@ -59,6 +76,7 @@ def _categorize_output_values(
     levels: Sequence[float],
     region_labels: Sequence[str],
 ) -> tuple[pd.DataFrame, pd.Series]:
+    """Assign each row to a threshold region and compute region percentages."""
     bins = [-float("inf"), *levels, float("inf")]
     df_copy[label_column] = pd.cut(
         df_copy[output_column],
@@ -79,6 +97,7 @@ def _categorize_output_values(
 
 
 def _prepare_axis(ax: Axes, *, title: str | None) -> None:
+    """Prepare a clean axis for summary bar rendering."""
     ax.clear()
     ax.set_xticks([])
     ax.set_yticks([])
@@ -96,6 +115,7 @@ def _plot_horizontal_summary(
     region_labels: Sequence[str],
     region_colors: Sequence[str],
 ) -> list[Any]:
+    """Render horizontal stacked summary bar and annotations."""
     artists: list[Any] = []
     ax.set_xlim(0, 100)
     ax.set_ylim(-0.6, 0.6)
@@ -157,6 +177,7 @@ def _plot_vertical_summary(
     region_labels: Sequence[str],
     region_colors: Sequence[str],
 ) -> list[Any]:
+    """Render vertical stacked summary bar and annotations."""
     artists: list[Any] = []
     ax.set_xlim(-0.75, 0.9)
     ax.set_ylim(0, 100)
@@ -213,13 +234,31 @@ def _plot_vertical_summary(
 
 
 class Summary:
+    """Build and render a threshold summary plot from tabular outputs."""
+
     def __init__(self, df: pd.DataFrame | None = None) -> None:
         self._df = df
 
     @classmethod
     def data(cls, df: pd.DataFrame) -> Summary:
+        """Create a :class:`Summary` configured with a DataFrame."""
         _validate_dataframe(df)
         return cls(df)
+
+    def _validate_plot_inputs(
+        self, *, output: str, thresholds: ThresholdsConfig
+    ) -> str:
+        """Validate plot inputs and return normalized output column name."""
+        if self._df is None:
+            raise ValueError("No dataframe set. Call data(df) before plot(...).")
+
+        output_name = _validate_output_column(self._df, output)
+        _validate_output_values(self._df, output_name)
+
+        if not isinstance(thresholds, ThresholdsConfig):
+            raise TypeError("thresholds must be a ThresholdsConfig.")
+
+        return output_name
 
     def plot(
         self,
@@ -230,12 +269,8 @@ class Summary:
         title: str | None = None,
         vertical: bool = False,
     ) -> SummaryPlotResult:
-        if self._df is None:
-            raise ValueError("No dataframe set. Call data(df) before plot(...).")
-
-        output_name = _validate_output_column(self._df, output)
-        if not isinstance(thresholds, ThresholdsConfig):
-            raise TypeError("thresholds must be a ThresholdsConfig.")
+        """Render a threshold summary plot for one output column."""
+        output_name = self._validate_plot_inputs(output=output, thresholds=thresholds)
 
         normalized_levels = _normalize_levels(thresholds.thresholds)
         region_labels = _build_region_labels(
