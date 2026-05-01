@@ -6,7 +6,7 @@ name: Test and publish pythermalcomfort
 on:
   push:
     tags:
-      - "v*"
+      - "*"
 
 permissions:
   contents: read
