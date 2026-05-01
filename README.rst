@@ -163,6 +163,68 @@ Common commands
     git commit -m "feat: short description of change"
     git push origin Feature/awesome-feature
 
+Release process
+---------------
+
+Releases are tag-driven and published via GitHub Actions Trusted Publishing.
+
+Production release (PyPI)
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: bash
+
+    # prepare local release branch
+    git checkout master
+    git pull --ff-only
+    git fetch --tags --prune
+
+    # if you are finalizing an rc release, promote rc -> final
+    bump-my-version bump pre_l
+
+    # or make a direct final release bump
+    # bump-my-version bump patch   # or minor / major
+
+    # publish commit and tag (tag push triggers PyPI release workflow)
+    git push
+    git push --tags
+
+Pre-release (TestPyPI)
+~~~~~~~~~~~~~~~~~~~~~~
+
+Use pre-release tags from ``development`` to validate packaging before releasing
+to PyPI.
+
+.. code-block:: bash
+
+    git checkout development
+    git pull --ff-only
+    git fetch --tags --prune
+
+    # start rc cycle for next patch release
+    bump-my-version bump patch
+
+    # iterate rc builds while testing
+    bump-my-version bump pre_n
+
+    # publish commit and tag (tag push triggers TestPyPI release workflow)
+    git push
+    git push --tags
+
+If additional commits are made after an ``rc`` tag, create a new pre-release
+tag by running ``bump-my-version bump pre_n`` again, then push commit and tags.
+
+Rules and safeguards:
+
+* Keep ``.bumpversion.toml`` and git tags aligned.
+* Tag format is standardized as ``vX.Y.Z`` and ``vX.Y.ZrcN``.
+* Production tags must point to commits reachable from ``master``.
+* TestPyPI publishing is triggered by tags matching ``v*rc*`` and those tags
+  must point to commits reachable from ``development``.
+* If a version exists in files but not as a tag, create and push the missing tag
+  before the next bump.
+* PyPI and TestPyPI publishing both use Trusted Publisher (OIDC), so no
+  ``PYPI_API_TOKEN`` or ``TEST_PYPI_API_TOKEN`` secret is required.
+
 Getting Help
 ============
 

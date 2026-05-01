@@ -21,7 +21,7 @@ project = "pythermalcomfort"
 year = "2025"
 author = "Federico Tartarini"
 project_copyright = f"{year}, {author}"
-version = release = "3.9.3"
+version = release = "v3.9.5"
 
 autodoc_typehints = "none"
 pygments_style = "trac"
