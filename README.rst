@@ -178,8 +178,11 @@ Production release (PyPI)
     git pull --ff-only
     git fetch --tags --prune
 
-    # bump version (patch/minor/major), commit, and create tag vX.Y.Z
-    bump-my-version bump patch
+    # if you are finalizing an rc release, promote rc -> final
+    bump-my-version bump pre_l
+
+    # or make a direct final release bump
+    # bump-my-version bump patch   # or minor / major
 
     # publish commit and tag (tag push triggers PyPI release workflow)
     git push
@@ -197,12 +200,18 @@ to PyPI.
     git pull --ff-only
     git fetch --tags --prune
 
-    # create rc tag on the exact commit to test
-    git tag -a v3.9.4rc1 -m "Pre-release v3.9.4rc1"
-    git push origin v3.9.4rc1
+    # start rc cycle for next patch release
+    bump-my-version bump patch
+
+    # iterate rc builds while testing
+    bump-my-version bump pre_n
+
+    # publish commit and tag (tag push triggers TestPyPI release workflow)
+    git push
+    git push --tags
 
 If additional commits are made after an ``rc`` tag, create a new pre-release
-tag (for example ``v3.9.4rc2``) on the new commit.
+tag by running ``bump-my-version bump pre_n`` again, then push commit and tags.
 
 Rules and safeguards:
 
