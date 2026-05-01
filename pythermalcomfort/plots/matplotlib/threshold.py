@@ -451,7 +451,9 @@ class ThresholdPlot:
         output_name: str,
     ) -> np.ndarray:
         """Evaluate the model on the contour grid and return shaped output."""
-        grid_kwargs = self._build_call_kwargs(x.ravel().tolist(), y.ravel().tolist())
+        x_flat = np.asarray(x).ravel()
+        y_flat = np.asarray(y).ravel()
+        grid_kwargs = self._build_call_kwargs(x_flat, y_flat)
         try:
             result = self.model_func(**grid_kwargs)
         except Exception as exc:
