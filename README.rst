@@ -160,14 +160,16 @@ Common commands
 
     # commit and push
     git add .
-     git commit -m "feat: short description of change"
-     git push origin Feature/awesome-feature
+    git commit -m "feat: short description of change"
+    git push origin Feature/awesome-feature
 
 Release process
 ---------------
 
-Releases are tag-driven and published to PyPI via GitHub Actions Trusted
-Publishing.
+Releases are tag-driven and published via GitHub Actions Trusted Publishing.
+
+Production release (PyPI)
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
@@ -183,13 +185,35 @@ Publishing.
     git push
     git push --tags
 
-Notes:
+Pre-release (TestPyPI)
+~~~~~~~~~~~~~~~~~~~~~~
+
+Use pre-release tags from ``development`` to validate packaging before releasing
+to PyPI.
+
+.. code-block:: bash
+
+    git checkout development
+    git pull --ff-only
+    git fetch --tags --prune
+
+    # create rc tag on the exact commit to test
+    git tag -a v3.9.4rc1 -m "Pre-release v3.9.4rc1"
+    git push origin v3.9.4rc1
+
+If additional commits are made after an ``rc`` tag, create a new pre-release
+tag (for example ``v3.9.4rc2``) on the new commit.
+
+Rules and safeguards:
 
 * Keep ``.bumpversion.toml`` and git tags aligned.
+* Production tags must point to commits reachable from ``master``.
+* TestPyPI publishing is triggered by tags matching ``v*rc*`` and those tags
+  must point to commits reachable from ``development``.
 * If a version exists in files but not as a tag, create and push the missing tag
   before the next bump.
-* PyPI publishing uses Trusted Publisher (OIDC), so no ``PYPI_API_TOKEN`` secret
-  is required.
+* PyPI and TestPyPI publishing both use Trusted Publisher (OIDC), so no
+  ``PYPI_API_TOKEN`` or ``TEST_PYPI_API_TOKEN`` secret is required.
 
 Getting Help
 ============
