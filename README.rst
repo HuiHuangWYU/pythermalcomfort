@@ -1,4 +1,4 @@
-.. image:: https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/raw/development/docs/images/pythermalcomfort-3-short.png
+.. image:: https://github.com/pythermalcomfort/pythermalcomfort/raw/development/docs/images/pythermalcomfort-3-short.png
   :align: center
   :alt: pythermalcomfort logo
 
@@ -115,7 +115,7 @@ Maintaining an open-source scientific package takes time. You can help by:
 - `Sponsoring on GitHub <https://github.com/sponsors/FedericoTartarini>`_
 - Submitting code, docs, or tests via a pull request
 - Reporting reproducible bugs or feature requests in the
-  `issue tracker <https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/issues>`_
+  `issue tracker <https://github.com/pythermalcomfort/pythermalcomfort/issues>`_
 - Assisting with testing, translations, or PR reviews
 - Starring or sharing the project to raise awareness
 
@@ -144,7 +144,7 @@ Common commands
     # clone your fork and add upstream remote
     git clone git@github.com:your-username/pythermalcomfort.git
     cd pythermalcomfort
-    git remote add upstream git@github.com:CenterForTheBuiltEnvironment/pythermalcomfort.git
+    git remote add upstream git@github.com:pythermalcomfort/pythermalcomfort.git
     git fetch upstream
 
     # create a branch and work on it
@@ -167,7 +167,7 @@ Getting Help
 ============
 
 * Open an issue on GitHub with a minimal reproduction in the
-  `issue tracker <https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/issues>`_.
+  `issue tracker <https://github.com/pythermalcomfort/pythermalcomfort/issues>`_.
 * Ask questions in PR comments for implementation guidance.
 * Review the
   `contribution guidelines <https://pythermalcomfort.readthedocs.io/en/latest/contributing.html>`_
@@ -179,7 +179,7 @@ Changelog
 =========
 
 A full list of changes per release is available in the
-`CHANGELOG <https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/blob/master/CHANGELOG.rst>`_.
+`CHANGELOG <https://github.com/pythermalcomfort/pythermalcomfort/blob/master/CHANGELOG.rst>`_.
 
 License
 =======
@@ -208,8 +208,8 @@ Stats
         | |supported-ver|
         | |package-health|
 
-.. |tests| image:: https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/actions/workflows/build-test-publish.yml/badge.svg
-    :target: https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/actions/workflows/build-test-publish.yml
+.. |tests| image:: https://github.com/pythermalcomfort/pythermalcomfort/actions/workflows/build-test-publish.yml/badge.svg
+    :target: https://github.com/pythermalcomfort/pythermalcomfort/actions/workflows/build-test-publish.yml
     :alt: Tests to ensure pythermalcomfort works on different Python versions and OS
 
 .. |package-health| image:: https://img.shields.io/badge/Snyk_security-monitored-8A2BE2
@@ -217,7 +217,7 @@ Stats
    :alt: Snyk Security Badge
 
 .. |license| image:: https://img.shields.io/pypi/l/pythermalcomfort?color=brightgreen
-    :target: https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/blob/master/LICENSE
+    :target: https://github.com/pythermalcomfort/pythermalcomfort/blob/master/LICENSE
     :alt: pythermalcomfort license
 
 .. |docs| image:: https://readthedocs.org/projects/pythermalcomfort/badge/?style=flat
@@ -227,9 +227,9 @@ Stats
 .. |downloads| image:: https://img.shields.io/pypi/dm/pythermalcomfort?color=brightgreen
     :alt: PyPI - Downloads
 
-.. |codecov| image:: https://codecov.io/github/CenterForTheBuiltEnvironment/pythermalcomfort/coverage.svg?branch=master
+.. |codecov| image:: https://codecov.io/github/pythermalcomfort/pythermalcomfort/coverage.svg?branch=master
     :alt: Coverage Status
-    :target: https://codecov.io/github/CenterForTheBuiltEnvironment/pythermalcomfort
+    :target: https://codecov.io/github/pythermalcomfort/pythermalcomfort
 
 .. |version| image:: https://img.shields.io/pypi/v/pythermalcomfort.svg
     :alt: PyPI Package latest release

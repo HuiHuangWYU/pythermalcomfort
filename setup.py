@@ -50,7 +50,7 @@ setup(
     long_description_content_type="text/x-rst",
     author="Federico Tartarini",
     author_email="cbecomforttool@gmail.com",
-    url="https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort",
+    url="https://github.com/pythermalcomfort/pythermalcomfort",
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
@@ -80,7 +80,7 @@ setup(
         "Documentation": "https://pythermalcomfort.readthedocs.io/",
         "Changelog": "https://pythermalcomfort.readthedocs.io/en/latest/changelog.html",
         "Issue Tracker": (
-            "https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/issues"
+            "https://github.com/pythermalcomfort/pythermalcomfort/issues"
         ),
     },
     keywords=[

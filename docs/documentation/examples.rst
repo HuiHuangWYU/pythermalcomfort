@@ -12,7 +12,7 @@ Example files
 
 You can also check the `Examples`_ files on how to use some of the functions
 
-.. _Examples: https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/tree/master/examples
+.. _Examples: https://github.com/pythermalcomfort/pythermalcomfort/tree/master/examples
 
 Video tutorials
 ===============

@@ -25,7 +25,7 @@ want to inspect the code or install a development branch:
 
 .. code-block:: bash
 
-    git clone https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort.git
+    git clone https://github.com/pythermalcomfort/pythermalcomfort.git
     cd pythermalcomfort
     pip install .
 

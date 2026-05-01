@@ -11,7 +11,7 @@ Bug, Feature, Discussions, and Documentation Issues
 Bug Reports
 -----------
 
-When `reporting a bug <https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/issues>`_, please complete
+When `reporting a bug <https://github.com/pythermalcomfort/pythermalcomfort/issues>`_, please complete
 the issue template with as much relevant information as possible, including:
 
 * Your operating system name and version.
@@ -31,8 +31,8 @@ located in the `docs/` folder.
 Features, Feedback, and Discussions
 -----------------------------------
 
-The best way to suggest a new feature is to open an `issue <https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/issues>`_.
-Alternatively, you can start a discussion in the `Discussions section <https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/discussions>`_.
+The best way to suggest a new feature is to open an `issue <https://github.com/pythermalcomfort/pythermalcomfort/issues>`_.
+Alternatively, you can start a discussion in the `Discussions section <https://github.com/pythermalcomfort/pythermalcomfort/discussions>`_.
 
 If you are proposing a feature, please use the `Feature request` template and:
 
@@ -56,7 +56,7 @@ Setting up your development environment:
 
     git clone git@github.com:your-username/pythermalcomfort.git
     cd pythermalcomfort
-    git remote add upstream git@github.com:CenterForTheBuiltEnvironment/pythermalcomfort.git
+    git remote add upstream git@github.com:pythermalcomfort/pythermalcomfort.git
     git fetch upstream
 
 2. Set up a virtual environment and install dependencies, you should have Python 3.12+ installed and `pipenv <https://pipenv.pypa.io/en/latest/>`_ available:
