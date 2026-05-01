@@ -2,7 +2,7 @@ Plots
 =====
 
 This section provides an overview of the plotting capabilities available in pythermalcomfort.
-The library offers a variety of functions to visualize the results of the model calculations.
+The library offers class-based utilities to visualize model results with Matplotlib.
 We also provide examples of how to create visually compelling and informative plots using popular Python libraries such as Matplotlib and Seaborn.
 
 To use the plotting functions we included in pythermalcomfort, please install the optional dependencies using:
@@ -23,17 +23,17 @@ Typical Use Cases
     - results from building simulation software.
     - results from sensor data.
 
-Plotting Functions Examples
----------------------------
+Plotting Examples
+-----------------
 
-The `plot` module in pythermalcomfort includes several built-in functions to create plots.
-These function can be used to compare the results of different models or to visualize how various parameters affect their outcomes.
+The `pythermalcomfort.plots.matplotlib` module includes configurable plotting classes.
+These classes can be used to compare model results and to visualize how variables affect outcomes.
 
 The `plot` module has a sub-module for different backends, currently supporting Matplotlib only, but we plan to add support for other libraries in the future (e.g., Plotly, Bokeh, Seaborn).
 
-All plotting functions return a figure object, which can be further customized if needed.
-This allows users to create more complex visualizations by adding additional elements or modifying existing ones.
-The full list of customizable parameters is available in the function docstrings and in the `calc_plot_ranges` function documentation.
+All plotting APIs return Matplotlib handles that can be further customized.
+This allows users to create richer visualizations by adding overlays or modifying existing artists.
+The full list of customizable parameters is available in the class docstrings.
 Use the search functionality in the top-right corner to find specific functions.
 
 Click on the links below to show some examples of the plotting functions available in pythermalcomfort.
@@ -41,43 +41,36 @@ The full list of functions is available in the "Plotting Functions Reference" se
 
 .. toctree::
 
-    plots/matplotlib/plots.ipynb
+    plots/matplotlib/threshold_plot.ipynb
+    plots/matplotlib/summary_plot.ipynb
 
 Examples Clear and Effective Visualizations
 -------------------------------------------
 
-In addition to the built-in plotting functions, the library provides several examples demonstrating how to create custom plots using Matplotlib and Seaborn.
-These examples cover a range of scenarios, from simple plots to more complex visualizations like heatmaps.
-Users can adapt these examples to suit their specific needs and create visually appealing representations.
+In addition to the plotting API notebooks, this section includes practical plotting
+recipes that combine `pythermalcomfort` with standard Matplotlib workflows for
+time series, distributions, and overlays.
 
 .. toctree::
 
     plots/matplotlib/example_plots.ipynb
 
-Plotting Functions Reference
-----------------------------
+Threshold Plot
+--------------
 
-Plot Operative Temperature vs Relative Humidity
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autoclass:: pythermalcomfort.plots.matplotlib.ThresholdPlot
+    :members: __init__, set_x_axis, set_y_axis, set_params, set_regions, plot
+    :member-order: bysource
 
-.. autofunction:: pythermalcomfort.plots.matplotlib.ranges_to_rh
+.. autoclass:: pythermalcomfort.plots.matplotlib.ThresholdPlotResult
+    :members:
 
-Plot Dry Bulb Temperature vs Relative Humidity
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Summary Plot
+------------
 
-.. autofunction:: pythermalcomfort.plots.matplotlib.ranges_tdb_rh
+.. autoclass:: pythermalcomfort.plots.matplotlib.SummaryPlot
+    :members: __init__, set_regions, plot
+    :member-order: bysource
 
-Plot Dry Bulb Temperature vs Air Speed
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: pythermalcomfort.plots.matplotlib.ranges_tdb_v
-
-Plot Psychrometric Chart (Dry Bulb Temperature)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: pythermalcomfort.plots.matplotlib.ranges_tdb_psychrometric
-
-Calculate and Plot Ranges
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autofunction:: pythermalcomfort.plots.generic.calc_plot_ranges
+.. autoclass:: pythermalcomfort.plots.matplotlib.SummaryPlotResult
+    :members:

@@ -4,27 +4,11 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
 from numbers import Number
 from typing import Any
 
 import numpy as np
 from matplotlib import colors as mcolors
-
-
-@dataclass
-class ThresholdsConfig:
-    """Threshold and optional label/color configuration.
-
-    Attributes:
-        thresholds: Sorted threshold boundaries used to split regions.
-        labels: Optional labels for each region. Length must be ``len(thresholds) + 1``.
-        colors: Optional colors for each region. Length must be ``len(thresholds) + 1``.
-    """
-
-    thresholds: Sequence[float]
-    labels: Sequence[str] | None = None
-    colors: Sequence[str] | None = None
 
 
 def _inspect_model_signature(
