@@ -163,15 +163,23 @@ def _default_region_colors(n_regions: int) -> list[str]:
     if n_regions < 1:
         raise ValueError("n_regions must be at least 1.")
     if n_regions == 1:
-        return ["#f2f2f2"]
+        return ["#008D3D"]
     if n_regions == 2:
-        return ["#4c78a8", "#e15759"]
+        return ["#0067B2", "#C40025"]
     if n_regions == 3:
-        return ["#4c78a8", "#f2f2f2", "#e15759"]
+        return ["#A3D1FF", "#A8E6CF", "#FFB7B2"]
 
     cmap = mcolors.LinearSegmentedColormap.from_list(
         "summary_blue_neutral_red",
-        ["#4c78a8", "#f2f2f2", "#e15759"],
+        [
+            "#8DA2D8",
+            "#A9D4F5",
+            "#D1EAFA",
+            "#D2E8BF",
+            "#F0BECB",
+            "#DE7B6A",
+            "#A65558",
+        ],
     )
     positions = np.linspace(0.0, 1.0, n_regions)
     return [mcolors.to_hex(cmap(value)) for value in positions]
