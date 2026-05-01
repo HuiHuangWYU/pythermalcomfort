@@ -216,6 +216,7 @@ tag by running ``bump-my-version bump pre_n`` again, then push commit and tags.
 Rules and safeguards:
 
 * Keep ``.bumpversion.toml`` and git tags aligned.
+* Tag format is standardized as ``vX.Y.Z`` and ``vX.Y.ZrcN``.
 * Production tags must point to commits reachable from ``master``.
 * TestPyPI publishing is triggered by tags matching ``v*rc*`` and those tags
   must point to commits reachable from ``development``.
