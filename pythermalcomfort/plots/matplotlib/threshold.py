@@ -11,6 +11,7 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
 from matplotlib.colors import ListedColormap, is_color_like
+from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
@@ -18,7 +19,7 @@ from matplotlib.patches import Patch
 from pythermalcomfort.plots.matplotlib._shared import (
     _apply_default_links_to_kwargs,
     _build_region_labels,
-    _extract_output_payload,
+    _extract_output_by_name,
     _inspect_model_signature,
     _normalize_levels,
     _resolve_region_colors,
@@ -43,12 +44,14 @@ class ThresholdPlotResult:
     """Container with handles returned by :meth:`ThresholdPlot.plot`.
 
     Attributes:
+        fig: Matplotlib figure containing the rendered threshold plot.
         ax: Matplotlib axis containing the rendered threshold plot.
         lines: Contour boundary lines as editable ``Line2D`` artists.
         fills: Filled threshold regions as ``PolyCollection`` artists.
         legend: Legend artist if ``legend=True``, otherwise ``None``.
     """
 
+    fig: Figure
     ax: Axes
     lines: list[Line2D]
     fills: list[PolyCollection]
@@ -154,10 +157,10 @@ class ThresholdPlot:
         self.x_axis: _AxisConfig | None = None
         self.y_axis: _AxisConfig | None = None
         self.fixed_values: dict[str, Any] = {}
-        self.output_name: str | None = None
-        self.thresholds: list[float] | None = None
-        self.region_labels: list[str] | None = None
-        self.region_colors: list[str] | None = None
+        self._output_name: str | None = None
+        self._thresholds: list[float] | None = None
+        self._region_labels: list[str] | None = None
+        self._region_colors: list[str] | None = None
         self._default_links: dict[str, str] = {"tr": "tdb", "tdb": "tr"}
         (
             _,
@@ -289,6 +292,15 @@ class ThresholdPlot:
         Raises:
             ValueError: If parameter names are invalid for the model signature or
                 conflict with configured x/y axis parameters.
+
+        Note:
+            **tr / tdb auto-link** — When the model accepts both ``tdb``
+            (dry-bulb temperature) and ``tr`` (mean radiant temperature), and
+            one of them is used as an axis parameter, the other is automatically
+            set to the same per-cell value if it is not explicitly supplied here.
+            For example, if ``tdb`` is the x-axis and ``tr`` is omitted, every
+            model call receives ``tr = tdb``.  Supply ``tr=<value>`` explicitly
+            to override this behaviour.
         """
         if not self._accepts_var_kwargs:
             invalid = sorted(key for key in kwargs if key not in self._allowed_args)
@@ -358,10 +370,10 @@ class ThresholdPlot:
             colors=colors,
         )
 
-        self.output_name = output_name
-        self.thresholds = normalized_levels
-        self.region_labels = region_labels
-        self.region_colors = region_colors
+        self._output_name = output_name
+        self._thresholds = normalized_levels
+        self._region_labels = region_labels
+        self._region_colors = region_colors
         return self
 
     def _validate_plot_inputs(self, *, fill_kws: Mapping[str, Any] | None) -> None:
@@ -371,10 +383,10 @@ class ThresholdPlot:
                 "Axes are not set. Call set_x_axis(...) and set_y_axis(...) first."
             )
         if (
-            self.output_name is None
-            or self.thresholds is None
-            or self.region_labels is None
-            or self.region_colors is None
+            self._output_name is None
+            or self._thresholds is None
+            or self._region_labels is None
+            or self._region_colors is None
         ):
             raise ValueError(
                 "Regions are not set. Call set_regions(...) before plot(...)."
@@ -447,7 +459,7 @@ class ThresholdPlot:
             raise ValueError(msg) from exc
 
         try:
-            payload = _extract_output_payload(result, output_name)
+            payload = _extract_output_by_name(result, output_name)
         except Exception as exc:
             msg = f"Failed to extract output '{output_name}' from contour result: {exc}"
             raise ValueError(msg) from exc
@@ -496,27 +508,28 @@ class ThresholdPlot:
         self._validate_plot_inputs(fill_kws=fill_kws)
         self._validate_invalid_color(invalid_color)
 
-        output_name = self.output_name
-        normalized_levels = self.thresholds
-        region_labels = self.region_labels
-        region_colors = self.region_colors
+        output_name = self._output_name
+        normalized_levels = self._thresholds
+        region_labels = self._region_labels
+        region_colors = self._region_colors
 
         line_opts = dict(line_kws or {})
         line_opts.setdefault("color", "black")
         line_opts.setdefault("linewidth", 1.0)
 
         fill_opts = dict(fill_kws or {})
-        fill_opts.setdefault("alpha", 0.65)
+        fill_opts.setdefault("alpha", 1)
         fill_opts.setdefault("corner_mask", False)
 
         legend_opts = dict(legend_kws or {})
         legend_opts.setdefault("loc", "lower center")
         legend_opts.setdefault("bbox_to_anchor", (0.5, 1.02))
-        legend_opts.setdefault("ncol", min(len(region_labels), 3))
         legend_opts.setdefault("frameon", False)
 
         if ax is None:
-            _, ax = plt.subplots(figsize=(9, 6))
+            fig, ax = plt.subplots(figsize=(7, 4))
+        else:
+            fig = ax.figure
 
         x_min, x_max, y_min, y_max, x, y = self._build_grid()
         z = self._evaluate_grid_output(x=x, y=y, output_name=output_name)
@@ -562,7 +575,6 @@ class ThresholdPlot:
                 invalid_mask,
                 cmap=ListedColormap([invalid_color]),
                 shading="flat",
-                antialiased=True,
                 zorder=1.5,
             )
 
@@ -609,6 +621,7 @@ class ThresholdPlot:
             ax.set_title(title)
 
         return ThresholdPlotResult(
+            fig=fig,
             ax=ax,
             lines=lines,
             fills=fills,

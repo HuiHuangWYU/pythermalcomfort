@@ -106,7 +106,7 @@ def assert_axis_limits(
 def test_set_params_rejects_invalid_parameter_name() -> None:
     plot = ThresholdPlot(vectorized_attribute_model)
 
-    with pytest.raises(ValueError, match="was not found"):
+    with pytest.raises(ValueError, match="were not found"):
         plot.set_params(bad_name=1)
 
 
@@ -154,6 +154,7 @@ def test_plot_uses_provided_subplot_axis() -> None:
 
     assert isinstance(result, ThresholdPlotResult)
     assert result.ax is ax
+    assert result.fig is fig
     assert len(result.fills) > 0
 
 
