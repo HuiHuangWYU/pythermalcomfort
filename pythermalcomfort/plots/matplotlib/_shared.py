@@ -111,16 +111,6 @@ def _extract_output_value(result: Any, output: str) -> float:
     return float(_extract_output_by_name(result, output))
 
 
-def _extract_output_payload(result: Any, output: str) -> Any:
-    """Extract a scalar or vector-capable output payload for contour plotting."""
-    payload = _extract_output_by_name(result, output)
-    if isinstance(payload, list | tuple | np.ndarray | Number) and not isinstance(
-        payload, bool
-    ):
-        return payload
-    return payload
-
-
 def _normalize_levels(levels: Sequence[float]) -> list[float]:
     """Validate and normalize threshold levels."""
     if len(levels) == 0:
@@ -148,13 +138,12 @@ def _build_region_labels(
     levels: Sequence[float],
     labels: Sequence[str] | None = None,
 ) -> list[str]:
-    """Build labels for threshold regions."""
-    normalized_levels = _normalize_levels(levels)
+    """Build labels for threshold regions from already-normalized levels."""
     output_name = output.strip()
     if not output_name:
         raise ValueError("output must be a non-empty string.")
 
-    n_regions = len(normalized_levels) + 1
+    n_regions = len(levels) + 1
     if labels is not None:
         if len(labels) != n_regions:
             msg = f"labels must have length {n_regions} (got {len(labels)})."
@@ -162,10 +151,10 @@ def _build_region_labels(
         return [str(label) for label in labels]
 
     out_name = output_name.upper()
-    region_labels = [f"{out_name} < {normalized_levels[0]:g}"]
-    for lower, upper in zip(normalized_levels, normalized_levels[1:], strict=False):
+    region_labels = [f"{out_name} < {levels[0]:g}"]
+    for lower, upper in zip(levels, levels[1:], strict=False):
         region_labels.append(f"{lower:g} <= {out_name} < {upper:g}")
-    region_labels.append(f"{out_name} >= {normalized_levels[-1]:g}")
+    region_labels.append(f"{out_name} >= {levels[-1]:g}")
     return region_labels
 
 
