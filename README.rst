@@ -160,8 +160,36 @@ Common commands
 
     # commit and push
     git add .
-    git commit -m "feat: short description of change"
-    git push origin Feature/awesome-feature
+     git commit -m "feat: short description of change"
+     git push origin Feature/awesome-feature
+
+Release process
+---------------
+
+Releases are tag-driven and published to PyPI via GitHub Actions Trusted
+Publishing.
+
+.. code-block:: bash
+
+    # prepare local release branch
+    git checkout master
+    git pull --ff-only
+    git fetch --tags --prune
+
+    # bump version (patch/minor/major), commit, and create tag vX.Y.Z
+    bump-my-version bump patch
+
+    # publish commit and tag (tag push triggers PyPI release workflow)
+    git push
+    git push --tags
+
+Notes:
+
+* Keep ``.bumpversion.toml`` and git tags aligned.
+* If a version exists in files but not as a tag, create and push the missing tag
+  before the next bump.
+* PyPI publishing uses Trusted Publisher (OIDC), so no ``PYPI_API_TOKEN`` secret
+  is required.
 
 Getting Help
 ============
