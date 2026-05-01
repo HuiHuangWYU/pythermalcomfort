@@ -5,7 +5,7 @@ on:
     branches:
       - development
     tags:
-      - "*"
+      - "v*rc*"
 
 permissions:
   contents: read
@@ -76,7 +76,7 @@ jobs:
           python-version: "3.11"
       - name: Ensure tag commit is on development
         run: |
-          git fetch origin development --depth=1
+          git fetch origin development
           git merge-base --is-ancestor "$GITHUB_SHA" "origin/development"
       - name: Install build dependencies
         run: |
