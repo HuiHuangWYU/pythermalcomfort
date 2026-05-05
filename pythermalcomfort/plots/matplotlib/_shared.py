@@ -4,11 +4,109 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field
 from numbers import Number
 from typing import Any
 
 import numpy as np
 from matplotlib import colors as mcolors
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+
+# ── public configuration ───────────────────────────────────────────────────
+
+
+@dataclass
+class ThresholdsConfig:
+    """Reusable threshold-region configuration.
+
+    Users create a ``ThresholdsConfig`` once, then pass it to both
+    :meth:`ThresholdPlot.set_regions` and :meth:`SummaryPlot.set_regions`
+    to guarantee consistent region definitions.
+
+    Attributes:
+        thresholds: One or more boundary values that divide the output range
+            into regions.  Values are sorted and validated on creation.
+        labels: Optional human-readable label for every region.  Must have
+            length ``len(thresholds) + 1`` when provided.
+        colors: Optional Matplotlib-compatible color for every region.  Must
+            have length ``len(thresholds) + 1`` when provided.
+
+    Example::
+
+        pmv_config = ThresholdsConfig(
+            thresholds=[-0.5, 0.5],
+            labels=["Cool", "Comfortable", "Warm"],
+            colors=["#A3D1FF", "#A8E6CF", "#FFB7B2"],
+        )
+    """
+
+    thresholds: Sequence[float]
+    labels: Sequence[str] | None = None
+    colors: Sequence[str] | None = None
+
+    # Resolved after __post_init__
+    _normalized_thresholds: list[float] = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        """Validate and normalise thresholds, labels, and colors."""
+        self._normalized_thresholds = _normalize_levels(self.thresholds)
+        n_regions = len(self._normalized_thresholds) + 1
+
+        if self.labels is not None:
+            if len(self.labels) != n_regions:
+                msg = f"labels must have length {n_regions} (got {len(self.labels)})."
+                raise ValueError(msg)
+            # Store as plain list[str] for downstream consumption
+            object.__setattr__(self, "labels", [str(label) for label in self.labels])
+
+        if self.colors is not None:
+            if len(self.colors) != n_regions:
+                msg = f"colors must have length {n_regions} (got {len(self.colors)})."
+                raise ValueError(msg)
+            invalid = [c for c in self.colors if not mcolors.is_color_like(c)]
+            if invalid:
+                msg = f"Invalid color value(s): {', '.join(str(c) for c in invalid)}."
+                raise ValueError(msg)
+            object.__setattr__(self, "colors", [str(c) for c in self.colors])
+
+
+# ── internal resolved container ────────────────────────────────────────────
+
+
+@dataclass
+class RegionConfig:
+    """Fully-resolved region configuration (internal use only).
+
+    Attributes:
+        output_name: Validated output column / field name.
+        thresholds: Sorted, finite threshold boundary values.
+        labels: Human-readable label for every region
+                (length = ``len(thresholds) + 1``).
+        colors: Matplotlib-compatible color for every region
+                (length = ``len(thresholds) + 1``).
+    """
+
+    output_name: str
+    thresholds: list[float]
+    labels: list[str]
+    colors: list[str]
+
+
+@dataclass
+class BasePlotResult:
+    """Minimal result handle shared by all plot types.
+
+    Attributes:
+        fig: Matplotlib figure containing the rendered plot.
+        ax: Matplotlib axis containing the rendered plot.
+    """
+
+    fig: Figure
+    ax: Axes
+
+
+# ── model-signature helpers ────────────────────────────────────────────────
 
 
 def _inspect_model_signature(
@@ -54,6 +152,9 @@ def _validate_model_kwargs(
         missing_str = ", ".join(missing)
         msg = f"Missing required parameter(s): {missing_str}"
         raise ValueError(msg)
+
+
+# ── output extraction ──────────────────────────────────────────────────────
 
 
 def _extract_output_by_name(result: Any, output: str) -> Any:
@@ -111,6 +212,9 @@ def _extract_output_value(result: Any, output: str) -> float:
     return float(_extract_output_by_name(result, output))
 
 
+# ── threshold / level helpers ──────────────────────────────────────────────
+
+
 def _normalize_levels(levels: Sequence[float]) -> list[float]:
     """Validate and normalize threshold levels."""
     if len(levels) == 0:
@@ -156,6 +260,9 @@ def _build_region_labels(
         region_labels.append(f"{lower:g} <= {out_name} < {upper:g}")
     region_labels.append(f"{out_name} >= {levels[-1]:g}")
     return region_labels
+
+
+# ── color helpers ──────────────────────────────────────────────────────────
 
 
 def _default_region_colors(n_regions: int) -> list[str]:
@@ -205,12 +312,67 @@ def _resolve_region_colors(
     return resolved
 
 
+# ── region configuration factory ───────────────────────────────────────────
+
+
+def _configure_regions(
+    *,
+    output: str,
+    thresholds: ThresholdsConfig,
+) -> RegionConfig:
+    """Validate inputs and build a :class:`RegionConfig`.
+
+    This is the single source of truth for region configuration shared by
+    :class:`SummaryPlot` and :class:`ThresholdPlot`.
+
+    Args:
+        output: Output column / field name.
+        thresholds: A :class:`ThresholdsConfig` carrying boundary values and
+            optional labels / colors.
+
+    Returns:
+        A fully validated :class:`RegionConfig`.
+
+    Raises:
+        TypeError: If *output* is not a string.
+        ValueError: If *output* is empty, or thresholds / labels / colors
+            are invalid.
+    """
+    if not isinstance(output, str):
+        raise TypeError("output must be a string.")
+    output_name = output.strip()
+    if not output_name:
+        raise ValueError("output must be a non-empty string.")
+
+    normalized_levels = thresholds._normalized_thresholds
+    region_labels = _build_region_labels(
+        output=output_name,
+        levels=normalized_levels,
+        labels=thresholds.labels,
+    )
+    region_colors = _resolve_region_colors(
+        n_regions=len(normalized_levels) + 1,
+        colors=thresholds.colors,
+    )
+
+    return RegionConfig(
+        output_name=output_name,
+        thresholds=normalized_levels,
+        labels=region_labels,
+        colors=region_colors,
+    )
+
+
+# ── default-link helpers ───────────────────────────────────────────────────
+
+
 def _apply_default_links_to_kwargs(
     kwargs: dict[str, Any],
     *,
     allowed_args: set[str],
     default_links: Mapping[str, str],
 ) -> dict[str, Any]:
+    """Apply implicit parameter links (e.g. tr <-> tdb) to *kwargs*."""
     resolved = dict(kwargs)
     for target, source in default_links.items():
         if (
@@ -223,7 +385,15 @@ def _apply_default_links_to_kwargs(
     return resolved
 
 
+# ── colour utilities ───────────────────────────────────────────────────────
+
+
 def _is_light_color(color: str) -> bool:
+    """Return ``True`` when *color* has a relative luminance above 0.7.
+
+    Uses the sRGB coefficients from the WCAG 2.0 definition so that
+    callers can pick a contrasting text colour (black vs. white).
+    """
     red, green, blue = mcolors.to_rgb(color)
     luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue
     return luminance > 0.7

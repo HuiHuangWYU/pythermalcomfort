@@ -10,18 +10,49 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 
 from pythermalcomfort.plots.matplotlib._shared import (
-    _build_region_labels,
+    BasePlotResult,
+    RegionConfig,
+    ThresholdsConfig,
+    _configure_regions,
     _is_light_color,
-    _normalize_levels,
-    _resolve_region_colors,
 )
+
+# ── visual constants ───────────────────────────────────────────────────────
+
+# Title
+_TITLE_FONTSIZE: int = 13
+_TITLE_PAD: int = 10
+
+# Bars (shared)
+_BAR_EDGECOLOR: str = "white"
+_BAR_LINEWIDTH: float = 1.0
+
+# Horizontal layout
+_H_XLIM: tuple[float, float] = (0.0, 100.0)
+_H_YLIM: tuple[float, float] = (-0.6, 0.6)
+_H_BAR_Y: float = 0.0
+_H_BAR_HEIGHT: float = 0.36
+_H_LABEL_Y: float = 0.34
+
+# Vertical layout
+_V_XLIM: tuple[float, float] = (-0.75, 0.9)
+_V_YLIM: tuple[float, float] = (0.0, 100.0)
+_V_BAR_X: float = 0.0
+_V_BAR_WIDTH: float = 0.42
+_V_LABEL_X_OFFSET: float = 0.38
+
+# Annotation text
+_PERCENTAGE_FONTSIZE: int = 12
+_LABEL_FONTSIZE: int = 11
+
+
+# ── result container ───────────────────────────────────────────────────────
 
 
 @dataclass
-class SummaryPlotResult:
+class SummaryPlotResult(BasePlotResult):
     """Container with handles and processed data from :meth:`SummaryPlot.plot`.
 
     Attributes:
@@ -32,11 +63,12 @@ class SummaryPlotResult:
         artists: List of rendered artists for post-customization.
     """
 
-    fig: Figure
-    ax: Axes
     data: pd.DataFrame
     region_percentages: pd.Series
     artists: list[Any]
+
+
+# ── validation helpers ─────────────────────────────────────────────────────
 
 
 def _validate_dataframe(df: pd.DataFrame) -> None:
@@ -76,6 +108,9 @@ def _validate_output_values(df: pd.DataFrame, output_column: str) -> None:
         raise ValueError(msg)
 
 
+# ── categorization ─────────────────────────────────────────────────────────
+
+
 def _categorize_output_values(
     df_copy: pd.DataFrame,
     *,
@@ -86,6 +121,7 @@ def _categorize_output_values(
 ) -> tuple[pd.DataFrame, pd.Series]:
     """Assign each row to a threshold region and compute region percentages."""
     bins = [-np.inf, *levels, np.inf]
+    df_copy[output_column] = pd.to_numeric(df_copy[output_column], errors="raise")
     df_copy[label_column] = pd.cut(
         df_copy[output_column],
         bins=bins,
@@ -104,6 +140,9 @@ def _categorize_output_values(
     return df_copy, region_percentages
 
 
+# ── axis preparation ───────────────────────────────────────────────────────
+
+
 def _prepare_axis(ax: Axes, *, title: str | None) -> None:
     """Prepare a clean axis for summary bar rendering."""
     ax.clear()
@@ -113,7 +152,10 @@ def _prepare_axis(ax: Axes, *, title: str | None) -> None:
         spine.set_visible(False)
 
     if title is not None:
-        ax.set_title(title, fontsize=13, pad=10)
+        ax.set_title(title, fontsize=_TITLE_FONTSIZE, pad=_TITLE_PAD)
+
+
+# ── annotation helpers ────────────────────────────────────────────────────
 
 
 def _add_center_text(
@@ -131,7 +173,7 @@ def _add_center_text(
         text,
         ha="center",
         va="center",
-        fontsize=12,
+        fontsize=_PERCENTAGE_FONTSIZE,
         fontweight="bold",
         color=color,
     )
@@ -169,112 +211,93 @@ def _add_region_annotations(
             label,
             ha=label_ha,
             va=label_va,
-            fontsize=11,
+            fontsize=_LABEL_FONTSIZE,
             color=label_color,
         ),
     ]
     return artists
 
 
-def _plot_horizontal_summary(
+# ── unified summary renderer ──────────────────────────────────────────────
+
+
+def _plot_summary(
     ax: Axes,
     *,
+    vertical: bool,
     region_percentages: pd.Series,
     region_labels: Sequence[str],
     region_colors: Sequence[str],
 ) -> list[Any]:
-    """Render horizontal stacked summary bar and annotations."""
+    """Render a stacked summary bar (horizontal *or* vertical) with annotations."""
     artists: list[Any] = []
-    ax.set_xlim(0, 100)
-    ax.set_ylim(-0.6, 0.6)
 
-    left = 0.0
-    bar_y = 0.0
-    bar_height = 0.36
+    if vertical:
+        ax.set_xlim(*_V_XLIM)
+        ax.set_ylim(*_V_YLIM)
+    else:
+        ax.set_xlim(*_H_XLIM)
+        ax.set_ylim(*_H_YLIM)
+
+    cumulative = 0.0
 
     for label, color in zip(region_labels, region_colors, strict=False):
         value = float(region_percentages[label])
-        bar = ax.barh(
-            y=bar_y,
-            width=value,
-            left=left,
-            height=bar_height,
-            color=color,
-            edgecolor="white",
-            linewidth=1.0,
-        )
+
+        if vertical:
+            bar = ax.bar(
+                x=_V_BAR_X,
+                height=value,
+                width=_V_BAR_WIDTH,
+                bottom=cumulative,
+                color=color,
+                edgecolor=_BAR_EDGECOLOR,
+                linewidth=_BAR_LINEWIDTH,
+            )
+        else:
+            bar = ax.barh(
+                y=_H_BAR_Y,
+                width=value,
+                left=cumulative,
+                height=_H_BAR_HEIGHT,
+                color=color,
+                edgecolor=_BAR_EDGECOLOR,
+                linewidth=_BAR_LINEWIDTH,
+            )
         artists.append(bar)
 
         if value > 0:
+            if vertical:
+                center_y = cumulative + value / 2
+                pct_x, pct_y = _V_BAR_X, center_y
+                lbl_x, lbl_y = _V_BAR_X + _V_LABEL_X_OFFSET, center_y
+                lbl_ha, lbl_va = "left", "center"
+            else:
+                pct_x, pct_y = cumulative + value / 2, _H_BAR_Y
+                lbl_x, lbl_y = cumulative + value / 2, _H_LABEL_Y
+                lbl_ha, lbl_va = "center", "bottom"
+
             artists.extend(
                 _add_region_annotations(
                     ax,
                     value=value,
                     label=label,
                     color=color,
-                    percentage_x=left + value / 2,
-                    percentage_y=bar_y,
-                    label_x=left + value / 2,
-                    label_y=0.34,
-                    label_ha="center",
-                    label_va="bottom",
+                    percentage_x=pct_x,
+                    percentage_y=pct_y,
+                    label_x=lbl_x,
+                    label_y=lbl_y,
+                    label_ha=lbl_ha,
+                    label_va=lbl_va,
                 )
             )
 
-        left += value
+        cumulative += value
 
     return artists
 
 
-def _plot_vertical_summary(
-    ax: Axes,
-    *,
-    region_percentages: pd.Series,
-    region_labels: Sequence[str],
-    region_colors: Sequence[str],
-) -> list[Any]:
-    """Render vertical stacked summary bar and annotations."""
-    artists: list[Any] = []
-    ax.set_xlim(-0.75, 0.9)
-    ax.set_ylim(0, 100)
-
-    bottom = 0.0
-    x = 0.0
-    width = 0.42
-
-    for label, color in zip(region_labels, region_colors, strict=False):
-        value = float(region_percentages[label])
-        bar = ax.bar(
-            x=x,
-            height=value,
-            width=width,
-            bottom=bottom,
-            color=color,
-            edgecolor="white",
-            linewidth=1.0,
-        )
-        artists.append(bar)
-
-        if value > 0:
-            center_y = bottom + value / 2
-            artists.extend(
-                _add_region_annotations(
-                    ax,
-                    value=value,
-                    label=label,
-                    color=color,
-                    percentage_x=x,
-                    percentage_y=center_y,
-                    label_x=x + 0.38,
-                    label_y=center_y,
-                    label_ha="left",
-                    label_va="center",
-                )
-            )
-
-        bottom += value
-
-    return artists
+# ── public API ─────────────────────────────────────────────────────────────
 
 
 class SummaryPlot:
@@ -296,27 +319,31 @@ class SummaryPlot:
         """
         _validate_dataframe(df)
         self._df = df
-        self._output_name: str | None = None
-        self._thresholds: list[float] | None = None
-        self._region_labels: list[str] | None = None
-        self._region_colors: list[str] | None = None
+        self._region_config: RegionConfig | None = None
 
     def set_regions(
         self,
         *,
         output: str,
-        thresholds: Sequence[float],
+        thresholds: ThresholdsConfig | Sequence[float],
         labels: Sequence[str] | None = None,
         colors: Sequence[str] | None = None,
     ) -> SummaryPlot:
         """Set output variable and threshold region configuration.
 
+        Accepts either a pre-built :class:`ThresholdsConfig` or raw
+        threshold values (with optional *labels* and *colors*).
+
         Args:
             output: Name of the DataFrame column to categorize.
-            thresholds: Threshold boundary values for region splitting.
-            labels: Optional region labels. Must have length
+            thresholds: A :class:`ThresholdsConfig` instance **or** a sequence
+                of numeric boundary values.  When a ``ThresholdsConfig`` is
+                supplied, *labels* and *colors* must not be given separately.
+            labels: Optional region labels (ignored when *thresholds* is a
+                ``ThresholdsConfig``).  Must have length
                 ``len(thresholds) + 1`` when provided.
-            colors: Optional region colors. Must have length
+            colors: Optional region colors (ignored when *thresholds* is a
+                ``ThresholdsConfig``).  Must have length
                 ``len(thresholds) + 1`` when provided.
 
         Returns:
@@ -325,26 +352,33 @@ class SummaryPlot:
         Raises:
             TypeError: If ``output`` is not a string.
             ValueError: If the output column is missing or has invalid values,
-                or if thresholds/labels/colors are invalid.
+                if *labels* or *colors* are supplied together with a
+                ``ThresholdsConfig``, or if thresholds/labels/colors are
+                invalid.
         """
+        # SummaryPlot-specific: validate column exists in the DataFrame
         output_name = _validate_output_column(self._df, output)
         _validate_output_values(self._df, output_name)
 
-        normalized_levels = _normalize_levels(thresholds)
-        region_labels = _build_region_labels(
-            output=output_name,
-            levels=normalized_levels,
-            labels=labels,
-        )
-        region_colors = _resolve_region_colors(
-            n_regions=len(normalized_levels) + 1,
-            colors=colors,
-        )
+        # Normalise into a ThresholdsConfig
+        if isinstance(thresholds, ThresholdsConfig):
+            if labels is not None or colors is not None:
+                raise ValueError(
+                    "labels and colors must not be provided separately when "
+                    "thresholds is a ThresholdsConfig instance.  Set them "
+                    "inside the ThresholdsConfig instead."
+                )
+            config = thresholds
+        else:
+            config = ThresholdsConfig(
+                thresholds=thresholds, labels=labels, colors=colors
+            )
 
-        self._output_name = output_name
-        self._thresholds = normalized_levels
-        self._region_labels = region_labels
-        self._region_colors = region_colors
+        # Shared region configuration
+        self._region_config = _configure_regions(
+            output=output_name,
+            thresholds=config,
+        )
         return self
 
     def plot(
@@ -367,50 +401,35 @@ class SummaryPlot:
         Raises:
             ValueError: If regions are not configured first via :meth:`set_regions`.
         """
-        if (
-            self._output_name is None
-            or self._thresholds is None
-            or self._region_labels is None
-            or self._region_colors is None
-        ):
+        if self._region_config is None:
             raise ValueError(
                 "Regions are not set. Call set_regions(...) before plot(...)."
             )
-        output_name = self._output_name
-        normalized_levels = self._thresholds
-        region_labels = self._region_labels
-        region_colors = self._region_colors
+        rc = self._region_config
 
         if ax is None:
             fig, ax = plt.subplots(figsize=(6, 3.5))
         else:
             fig = ax.figure
 
-        label_column = f"{output_name}_label"
+        label_column = f"{rc.output_name}_label"
         df_copy = self._df.copy()
         df_copy, region_percentages = _categorize_output_values(
             df_copy,
-            output_column=output_name,
+            output_column=rc.output_name,
             label_column=label_column,
-            levels=normalized_levels,
-            region_labels=region_labels,
+            levels=rc.thresholds,
+            region_labels=rc.labels,
         )
 
         _prepare_axis(ax, title=title)
-        if vertical:
-            artists = _plot_vertical_summary(
-                ax,
-                region_percentages=region_percentages,
-                region_labels=region_labels,
-                region_colors=region_colors,
-            )
-        else:
-            artists = _plot_horizontal_summary(
-                ax,
-                region_percentages=region_percentages,
-                region_labels=region_labels,
-                region_colors=region_colors,
-            )
+        artists = _plot_summary(
+            ax,
+            vertical=vertical,
+            region_percentages=region_percentages,
+            region_labels=rc.labels,
+            region_colors=rc.colors,
+        )
 
         return SummaryPlotResult(
             fig=fig,

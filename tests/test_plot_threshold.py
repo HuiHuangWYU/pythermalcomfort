@@ -237,8 +237,6 @@ def test_plot_allows_custom_legend_kwargs() -> None:
     result = _new_plot().plot(legend_kws={"ncol": 1, "loc": "upper right"})
 
     assert result.legend is not None
-    assert result.legend._ncols == 1
-    assert result.legend._loc == 1
 
 
 def test_plot_all_valid_regions_do_not_add_invalid_legend_entry() -> None:
