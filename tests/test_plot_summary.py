@@ -7,7 +7,11 @@ import pytest
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from pythermalcomfort.plots.matplotlib.summary import SummaryPlot, SummaryPlotResult
+from pythermalcomfort.plots.matplotlib.summary import (
+    SummaryPlot,
+    SummaryPlotResult,
+    ThresholdsConfig,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -158,3 +162,21 @@ def test_set_regions_rejects_non_finite_output_values() -> None:
 
     with pytest.raises(ValueError, match="non-finite"):
         SummaryPlot(df).set_regions(output="pmv", thresholds=[-0.5, 0.5])
+
+
+def test_summary_with_thresholds_config() -> None:
+    config = ThresholdsConfig(
+        thresholds=[-0.5, 0.5],
+        labels=["Cool", "Comfortable", "Warm"],
+    )
+    df = pd.DataFrame({"pmv": [0.7, -0.3, 0.1, -0.8, 1.2]})
+    result = SummaryPlot(df).set_regions(output="pmv", thresholds=config).plot()
+    assert isinstance(result, SummaryPlotResult)
+    assert list(result.region_percentages.index) == ["Cool", "Comfortable", "Warm"]
+
+
+def test_summary_handles_numeric_string_column() -> None:
+    df = pd.DataFrame({"pmv": ["0.7", "-0.3", "0.1", "-0.8", "1.2"]})
+    result = SummaryPlot(df).set_regions(output="pmv", thresholds=[-0.5, 0.5]).plot()
+    assert isinstance(result, SummaryPlotResult)
+    assert result.region_percentages.sum() > 99.9

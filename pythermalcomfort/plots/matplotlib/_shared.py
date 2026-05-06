@@ -207,11 +207,6 @@ def _extract_output_by_name(result: Any, output: str) -> Any:
     raise ValueError(msg)
 
 
-def _extract_output_value(result: Any, output: str) -> float:
-    """Extract a scalar output value from a model result."""
-    return float(_extract_output_by_name(result, output))
-
-
 # ── threshold / level helpers ──────────────────────────────────────────────
 
 

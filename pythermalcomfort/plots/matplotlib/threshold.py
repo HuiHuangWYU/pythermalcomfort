@@ -28,6 +28,8 @@ from pythermalcomfort.plots.matplotlib._shared import (
 
 OUT_OF_MODEL_LIMITS_COLOR = "#bdbdbd"
 
+_DEFAULT_PARAMETER_LINKS: dict[str, str] = {"tr": "tdb", "tdb": "tr"}
+
 
 @dataclass
 class _AxisConfig:
@@ -156,7 +158,7 @@ class ThresholdPlot:
         self._y_axis: _AxisConfig | None = None
         self._fixed_values: dict[str, Any] = {}
         self._region_config: RegionConfig | None = None
-        self._default_links: dict[str, str] = {"tr": "tdb", "tdb": "tr"}
+        self._default_links = _DEFAULT_PARAMETER_LINKS
         (
             _,
             self._allowed_args,
@@ -428,7 +430,12 @@ class ThresholdPlot:
         y_max = float(self._y_axis.max_val)
 
         x_vals = np.arange(x_min, x_max, self._x_axis.resolution)
+        if x_vals[-1] < x_max:
+            x_vals = np.append(x_vals, x_max)
+
         y_vals = np.arange(y_min, y_max, self._y_axis.resolution)
+        if y_vals[-1] < y_max:
+            y_vals = np.append(y_vals, y_max)
 
         if x_vals.size < 2 or y_vals.size < 2:
             msg = (
@@ -436,11 +443,6 @@ class ThresholdPlot:
                 "Each axis requires at least 2 grid points."
             )
             raise ValueError(msg)
-
-        if x_vals[-1] < x_max:
-            x_vals = np.append(x_vals, x_max)
-        if y_vals[-1] < y_max:
-            y_vals = np.append(y_vals, y_max)
 
         X, Y = np.meshgrid(x_vals, y_vals)
         return x_min, x_max, y_min, y_max, X, Y
