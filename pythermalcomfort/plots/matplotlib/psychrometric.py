@@ -33,7 +33,7 @@ class PsychrometricPlot(ThresholdPlot):
     before calling the underlying model.  Constant-RH background curves are
     drawn on top of the threshold regions.
 
-    Example
+    Examples
     --------
     .. code-block:: python
 
@@ -60,18 +60,26 @@ class PsychrometricPlot(ThresholdPlot):
     ) -> PsychrometricPlot:
         """Set x-axis; must be ``'tdb'`` (dry-bulb temperature).
 
-        Args:
-            name: Must be ``'tdb'``.
-            min_val: Minimum dry-bulb temperature.
-            max_val: Maximum dry-bulb temperature.
-            resolution: Grid step along the x-axis.
+        Parameters
+        ----------
+        name : str
+            Must be ``'tdb'``.
+        min_val : float
+            Minimum dry-bulb temperature.
+        max_val : float
+            Maximum dry-bulb temperature.
+        resolution : float
+            Grid step along the x-axis.
 
-        Returns:
+        Returns
+        -------
+        PsychrometricPlot
             Self, to support method chaining.
 
-        Raises:
-            ValueError: If ``name`` is not ``'tdb'``, or if range/resolution
-                are invalid.
+        Raises
+        ------
+        ValueError
+            If ``name`` is not ``'tdb'``, or if range/resolution are invalid.
         """
         if name != "tdb":
             raise ValueError(
@@ -93,19 +101,27 @@ class PsychrometricPlot(ThresholdPlot):
         models accept ``rh`` (relative humidity), not ``hr`` directly.  Grid
         evaluation handles the conversion internally.
 
-        Args:
-            name: Must be ``'hr'``.
-            min_val: Minimum humidity ratio (kg/kg).
-            max_val: Maximum humidity ratio (kg/kg).
-            resolution: Grid step along the y-axis.
+        Parameters
+        ----------
+        name : str
+            Must be ``'hr'``.
+        min_val : float
+            Minimum humidity ratio (kg/kg).
+        max_val : float
+            Maximum humidity ratio (kg/kg).
+        resolution : float
+            Grid step along the y-axis.
 
-        Returns:
+        Returns
+        -------
+        PsychrometricPlot
             Self, to support method chaining.
 
-        Raises:
-            ValueError: If ``name`` is not ``'hr'``, conflicts with a fixed
-                parameter set via :meth:`set_params`, or if range/resolution
-                are invalid.
+        Raises
+        ------
+        ValueError
+            If ``name`` is not ``'hr'``, conflicts with a fixed parameter set
+            via :meth:`set_params`, or if range/resolution are invalid.
         """
         if name != "hr":
             raise ValueError(
@@ -216,22 +232,31 @@ class PsychrometricPlot(ThresholdPlot):
         - A white fill masking the physically impossible RH > 100 % area.
         - Dotted constant-RH background curves at 10 % intervals.
 
-        Args:
-            ax: Existing axis to draw on. If ``None``, a new figure/axis is
-                created.
-            title: Optional axis title.
-            legend: Whether to draw a legend.
-            show_lines: Whether to draw threshold contour boundaries.
-            line_kws: Keyword overrides forwarded to ``ax.plot`` for contour
-                lines.
-            fill_kws: Keyword overrides forwarded to ``ax.contourf`` for region
-                fills.  Keys ``color`` and ``facecolor`` are reserved and
-                rejected.
-            legend_kws: Keyword overrides forwarded to ``ax.legend``.
-            invalid_color: Color used for out-of-model/invalid grid areas.
+        Parameters
+        ----------
+        ax : Axes, optional
+            Existing axis to draw on.  If ``None``, a new figure/axis is
+            created with a default size of ``(7, 4)`` inches.
+        title : str, optional
+            Optional axis title.
+        legend : bool
+            Whether to draw a legend.
+        show_lines : bool
+            Whether to draw threshold contour boundaries.
+        line_kws : dict, optional
+            Keyword overrides forwarded to ``ax.plot`` for contour lines.
+        fill_kws : dict, optional
+            Keyword overrides forwarded to ``ax.contourf`` for region fills.
+            Keys ``color`` and ``facecolor`` are reserved and rejected.
+        legend_kws : dict, optional
+            Keyword overrides forwarded to ``ax.legend``.
+        invalid_color : str
+            Color used for out-of-model/invalid grid areas.
 
-        Returns:
-            :class:`ThresholdPlotResult` with axis and artist handles.
+        Returns
+        -------
+        ThresholdPlotResult
+            Result with axis and artist handles.
         """
         result = super().plot(
             ax=ax,

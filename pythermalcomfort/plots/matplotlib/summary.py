@@ -27,12 +27,18 @@ from pythermalcomfort.plots.matplotlib._shared import (
 class SummaryPlotResult(BasePlotResult):
     """Container with handles and processed data from :meth:`SummaryPlot.plot`.
 
-    Attributes:
-        fig: Matplotlib figure containing the summary plot.
-        ax: Matplotlib axis containing the summary plot.
-        data: Copy of input DataFrame with an added output label column.
-        region_percentages: Percentage share per region label.
-        artists: List of rendered artists for post-customization.
+    Attributes
+    ----------
+    fig : Figure
+        Matplotlib figure containing the summary plot.
+    ax : Axes
+        Matplotlib axis containing the summary plot.
+    data : DataFrame
+        Copy of input DataFrame with an added output label column.
+    region_percentages : Series
+        Percentage share per region label.
+    artists : list
+        List of rendered artists for post-customization.
     """
 
     data: pd.DataFrame
@@ -291,12 +297,17 @@ class SummaryPlot:
     def __init__(self, df: pd.DataFrame) -> None:
         """Initialize a summary plot builder from a DataFrame.
 
-        Args:
-            df: Input DataFrame containing at least one output column to summarize.
+        Parameters
+        ----------
+        df : DataFrame
+            Input DataFrame containing at least one output column to summarize.
 
-        Raises:
-            TypeError: If ``df`` is not a pandas DataFrame.
-            ValueError: If ``df`` is empty.
+        Raises
+        ------
+        TypeError
+            If ``df`` is not a pandas DataFrame.
+        ValueError
+            If ``df`` is empty.
         """
         _validate_dataframe(df)
         self._df = df
@@ -312,30 +323,37 @@ class SummaryPlot:
     ) -> SummaryPlot:
         """Set output variable and threshold region configuration.
 
-        Accepts either a pre-built :class:`ThresholdsConfig` or raw
-        threshold values (with optional *labels* and *colors*).
+        Accepts either a pre-built :class:`ThresholdsConfig` or raw threshold
+        values (with optional *labels* and *colors*).
 
-        Args:
-            output: Name of the DataFrame column to categorize.
-            thresholds: A :class:`ThresholdsConfig` instance **or** a sequence
-                of numeric boundary values.  When a ``ThresholdsConfig`` is
-                supplied, *labels* and *colors* must not be given separately.
-            labels: Optional region labels (ignored when *thresholds* is a
-                ``ThresholdsConfig``).  Must have length
-                ``len(thresholds) + 1`` when provided.
-            colors: Optional region colors (ignored when *thresholds* is a
-                ``ThresholdsConfig``).  Must have length
-                ``len(thresholds) + 1`` when provided.
+        Parameters
+        ----------
+        output : str
+            Name of the DataFrame column to categorize.
+        thresholds : ThresholdsConfig or sequence of float
+            A :class:`ThresholdsConfig` instance **or** a sequence of numeric
+            boundary values.  When a ``ThresholdsConfig`` is supplied, *labels*
+            and *colors* must not be given separately.
+        labels : sequence of str, optional
+            Region labels.  Ignored when *thresholds* is a ``ThresholdsConfig``.
+            Must have length ``len(thresholds) + 1`` when provided.
+        colors : sequence of str, optional
+            Region colors.  Ignored when *thresholds* is a ``ThresholdsConfig``.
+            Must have length ``len(thresholds) + 1`` when provided.
 
-        Returns:
+        Returns
+        -------
+        SummaryPlot
             Self, to support method chaining.
 
-        Raises:
-            TypeError: If ``output`` is not a string.
-            ValueError: If the output column is missing or has invalid values,
-                if *labels* or *colors* are supplied together with a
-                ``ThresholdsConfig``, or if thresholds/labels/colors are
-                invalid.
+        Raises
+        ------
+        TypeError
+            If ``output`` is not a string.
+        ValueError
+            If the output column is missing or has invalid values, if *labels*
+            or *colors* are supplied together with a ``ThresholdsConfig``, or
+            if thresholds/labels/colors are invalid.
         """
         output_name = _validate_output_column(self._df, output)
         _validate_output_values(self._df, output_name)
@@ -368,17 +386,25 @@ class SummaryPlot:
     ) -> SummaryPlotResult:
         """Render a threshold summary plot for the configured output column.
 
-        Args:
-            ax: Existing axis to draw on. If ``None``, a new figure/axis is created
-                with a default size of ``(6, 3.5)`` inches.
-            title: Optional axis title.
-            vertical: If ``True``, render a vertical stacked bar; otherwise horizontal.
+        Parameters
+        ----------
+        ax : Axes, optional
+            Existing axis to draw on.  If ``None``, a new figure/axis is created
+            with a default size of ``(7, 4)`` inches.
+        title : str, optional
+            Optional axis title.
+        vertical : bool
+            If ``True``, render a vertical stacked bar; otherwise horizontal.
 
-        Returns:
-            :class:`SummaryPlotResult` with figure, axis, processed data, and artists.
+        Returns
+        -------
+        SummaryPlotResult
+            Result with figure, axis, processed data, and artists.
 
-        Raises:
-            ValueError: If regions are not configured first via :meth:`set_regions`.
+        Raises
+        ------
+        ValueError
+            If regions are not configured first via :meth:`set_regions`.
         """
         if self._region_config is None:
             raise ValueError(

@@ -35,12 +35,18 @@ from pythermalcomfort.plots.matplotlib._shared import (
 class ThresholdPlotResult(BasePlotResult):
     """Container with handles returned by :meth:`ThresholdPlot.plot`.
 
-    Attributes:
-        fig: Matplotlib figure containing the rendered threshold plot.
-        ax: Matplotlib axis containing the rendered threshold plot.
-        lines: Contour boundary lines as editable ``Line2D`` artists.
-        fills: Filled threshold regions as ``PolyCollection`` artists.
-        legend: Legend artist if ``legend=True``, otherwise ``None``.
+    Attributes
+    ----------
+    fig : Figure
+        Matplotlib figure containing the rendered threshold plot.
+    ax : Axes
+        Matplotlib axis containing the rendered threshold plot.
+    lines : list of Line2D
+        Contour boundary lines as editable artists.
+    fills : list of PolyCollection
+        Filled threshold regions as artists.
+    legend : Legend or None
+        Legend artist if ``legend=True``, otherwise ``None``.
     """
 
     lines: list[Line2D]
@@ -91,7 +97,7 @@ class ThresholdPlot:
     The returned result contains editable Matplotlib artists, so users can apply
     additional styling with standard Matplotlib code.
 
-    Example
+    Examples
     --------
     .. code-block:: python
 
@@ -112,10 +118,11 @@ class ThresholdPlot:
     def __init__(self, model_func: Any) -> None:
         """Initialize a threshold plot builder.
 
-        Args:
-            model_func: Callable model function (typically from
-                ``pythermalcomfort.models``). Its signature is inspected to validate
-                axis names and fixed parameters.
+        Parameters
+        ----------
+        model_func : callable
+            Callable model function (typically from ``pythermalcomfort.models``).
+            Its signature is inspected to validate axis names and fixed parameters.
         """
         self._model_func = model_func
         self._x_axis: _AxisConfig | None = None
@@ -187,19 +194,29 @@ class ThresholdPlot:
     ) -> ThresholdPlot:
         """Set x-axis model parameter, range, and grid resolution.
 
-        Args:
-            name: Model argument name mapped to the x-axis.
-            min_val: Minimum x-axis value.
-            max_val: Maximum x-axis value.
-            resolution: Grid step along x-axis used for contour evaluation.
+        Parameters
+        ----------
+        name : str
+            Model argument name mapped to the x-axis.
+        min_val : float
+            Minimum x-axis value.
+        max_val : float
+            Maximum x-axis value.
+        resolution : float
+            Grid step along x-axis used for contour evaluation.
 
-        Returns:
+        Returns
+        -------
+        ThresholdPlot
             Self, to support method chaining.
 
-        Raises:
-            TypeError: If ``name`` is not a string.
-            ValueError: If ``name`` is empty/invalid, conflicts with y-axis,
-                conflicts with fixed params, or range/resolution are invalid.
+        Raises
+        ------
+        TypeError
+            If ``name`` is not a string.
+        ValueError
+            If ``name`` is empty/invalid, conflicts with y-axis,
+            conflicts with fixed params, or range/resolution are invalid.
         """
         return self._set_axis(
             axis_kind="x",
@@ -219,19 +236,29 @@ class ThresholdPlot:
     ) -> ThresholdPlot:
         """Set y-axis model parameter, range, and grid resolution.
 
-        Args:
-            name: Model argument name mapped to the y-axis.
-            min_val: Minimum y-axis value.
-            max_val: Maximum y-axis value.
-            resolution: Grid step along y-axis used for contour evaluation.
+        Parameters
+        ----------
+        name : str
+            Model argument name mapped to the y-axis.
+        min_val : float
+            Minimum y-axis value.
+        max_val : float
+            Maximum y-axis value.
+        resolution : float
+            Grid step along y-axis used for contour evaluation.
 
-        Returns:
+        Returns
+        -------
+        ThresholdPlot
             Self, to support method chaining.
 
-        Raises:
-            TypeError: If ``name`` is not a string.
-            ValueError: If ``name`` is empty/invalid, conflicts with x-axis,
-                conflicts with fixed params, or range/resolution are invalid.
+        Raises
+        ------
+        TypeError
+            If ``name`` is not a string.
+        ValueError
+            If ``name`` is empty/invalid, conflicts with x-axis,
+            conflicts with fixed params, or range/resolution are invalid.
         """
         return self._set_axis(
             axis_kind="y",
@@ -244,24 +271,31 @@ class ThresholdPlot:
     def set_params(self, **kwargs: Any) -> ThresholdPlot:
         """Set fixed model parameters used during grid evaluation.
 
-        Args:
-            **kwargs: Fixed model inputs passed unchanged to model evaluations.
+        Parameters
+        ----------
+        **kwargs : Any
+            Fixed model inputs passed unchanged to model evaluations.
 
-        Returns:
+        Returns
+        -------
+        ThresholdPlot
             Self, to support method chaining.
 
-        Raises:
-            ValueError: If parameter names are invalid for the model signature or
-                conflict with configured x/y axis parameters.
+        Raises
+        ------
+        ValueError
+            If parameter names are invalid for the model signature or conflict
+            with configured x/y axis parameters.
 
-        Note:
-            **tr / tdb auto-link** — When the model accepts both ``tdb``
-            (dry-bulb temperature) and ``tr`` (mean radiant temperature), and
-            one of them is used as an axis parameter, the other is automatically
-            set to the same per-cell value if it is not explicitly supplied here.
-            For example, if ``tdb`` is the x-axis and ``tr`` is omitted, every
-            model call receives ``tr = tdb``.  Supply ``tr=<value>`` explicitly
-            to override this behaviour.
+        Notes
+        -----
+        **tr / tdb auto-link** — When the model accepts both ``tdb``
+        (dry-bulb temperature) and ``tr`` (mean radiant temperature), and one
+        of them is used as an axis parameter, the other is automatically set to
+        the same per-cell value if it is not explicitly supplied here.  For
+        example, if ``tdb`` is the x-axis and ``tr`` is omitted, every model
+        call receives ``tr = tdb``.  Supply ``tr=<value>`` explicitly to
+        override this behaviour.
         """
         if not self._accepts_var_kwargs:
             invalid = sorted(key for key in kwargs if key not in self._allowed_args)
@@ -299,29 +333,37 @@ class ThresholdPlot:
     ) -> ThresholdPlot:
         """Set output variable and threshold region configuration.
 
-        Accepts either a pre-built :class:`ThresholdsConfig` or raw
-        threshold values (with optional *labels* and *colors*).
+        Accepts either a pre-built :class:`ThresholdsConfig` or raw threshold
+        values (with optional *labels* and *colors*).
 
-        Args:
-            output: Output field name to extract from the model result.
-            thresholds: A :class:`ThresholdsConfig` instance **or** a sequence
-                of numeric boundary values.  When a ``ThresholdsConfig`` is
-                supplied, *labels* and *colors* must not be given separately.
-            labels: Optional region labels (ignored when *thresholds* is a
-                ``ThresholdsConfig``).  Must have length
-                ``len(thresholds) + 1`` when provided.
-            colors: Optional region colors (ignored when *thresholds* is a
-                ``ThresholdsConfig``).  Must have length
-                ``len(thresholds) + 1`` when provided.
+        Parameters
+        ----------
+        output : str
+            Output field name to extract from the model result.
+        thresholds : ThresholdsConfig or sequence of float
+            A :class:`ThresholdsConfig` instance **or** a sequence of numeric
+            boundary values.  When a ``ThresholdsConfig`` is supplied, *labels*
+            and *colors* must not be given separately.
+        labels : sequence of str, optional
+            Region labels.  Ignored when *thresholds* is a ``ThresholdsConfig``.
+            Must have length ``len(thresholds) + 1`` when provided.
+        colors : sequence of str, optional
+            Region colors.  Ignored when *thresholds* is a ``ThresholdsConfig``.
+            Must have length ``len(thresholds) + 1`` when provided.
 
-        Returns:
+        Returns
+        -------
+        ThresholdPlot
             Self, to support method chaining.
 
-        Raises:
-            TypeError: If ``output`` is not a string.
-            ValueError: If output name is empty, if *labels* or *colors* are
-                supplied together with a ``ThresholdsConfig``, or if
-                thresholds/labels/colors are invalid.
+        Raises
+        ------
+        TypeError
+            If ``output`` is not a string.
+        ValueError
+            If output name is empty, if *labels* or *colors* are supplied
+            together with a ``ThresholdsConfig``, or if thresholds/labels/colors
+            are invalid.
         """
         # Normalise into a ThresholdsConfig
         if isinstance(thresholds, ThresholdsConfig):
@@ -457,23 +499,37 @@ class ThresholdPlot:
     ) -> ThresholdPlotResult:
         """Render threshold regions and contours on a Matplotlib axis.
 
-        Args:
-            ax: Existing axis to draw on. If ``None``, a new figure/axis is created.
-            title: Optional axis title.
-            legend: Whether to draw a legend.
-            show_lines: Whether to draw threshold contour boundaries.
-            line_kws: Keyword overrides forwarded to ``ax.plot`` for contour lines.
-            fill_kws: Keyword overrides forwarded to ``ax.contourf`` for region fills.
-                Keys ``color`` and ``facecolor`` are reserved and rejected.
-            legend_kws: Keyword overrides forwarded to ``ax.legend``.
-            invalid_color: Color used for out-of-model/invalid grid areas.
+        Parameters
+        ----------
+        ax : Axes, optional
+            Existing axis to draw on.  If ``None``, a new figure/axis is
+            created with a default size of ``(7, 4)`` inches.
+        title : str, optional
+            Optional axis title.
+        legend : bool
+            Whether to draw a legend.
+        show_lines : bool
+            Whether to draw threshold contour boundaries.
+        line_kws : dict, optional
+            Keyword overrides forwarded to ``ax.plot`` for contour lines.
+        fill_kws : dict, optional
+            Keyword overrides forwarded to ``ax.contourf`` for region fills.
+            Keys ``color`` and ``facecolor`` are reserved and rejected.
+        legend_kws : dict, optional
+            Keyword overrides forwarded to ``ax.legend``.
+        invalid_color : str
+            Color used for out-of-model/invalid grid areas.
 
-        Returns:
-            :class:`ThresholdPlotResult` with axis and artist handles.
+        Returns
+        -------
+        ThresholdPlotResult
+            Result with axis and artist handles.
 
-        Raises:
-            ValueError: If required configuration is missing, plotting inputs are
-                invalid, or model evaluation/output extraction fails.
+        Raises
+        ------
+        ValueError
+            If required configuration is missing, plotting inputs are invalid,
+            or model evaluation/output extraction fails.
         """
         self._validate_plot_inputs(fill_kws=fill_kws)
         self._validate_invalid_color(invalid_color)

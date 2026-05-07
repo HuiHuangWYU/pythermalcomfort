@@ -61,7 +61,9 @@ class _PlotDefaults:
     Top-level attributes are shared across all plot types for a consistent
     look and feel.  Nested classes group plot-specific defaults by type.
 
-    Usage::
+    Examples
+    --------
+    .. code-block:: python
 
         from pythermalcomfort.plots.matplotlib._shared import _PlotDefaults
 
@@ -151,15 +153,21 @@ class ThresholdsConfig:
     :meth:`ThresholdPlot.set_regions` and :meth:`SummaryPlot.set_regions`
     to guarantee consistent region definitions.
 
-    Attributes:
-        thresholds: One or more boundary values that divide the output range
-            into regions.  Values are sorted and validated on creation.
-        labels: Optional human-readable label for every region.  Must have
-            length ``len(thresholds) + 1`` when provided.
-        colors: Optional Matplotlib-compatible color for every region.  Must
-            have length ``len(thresholds) + 1`` when provided.
+    Attributes
+    ----------
+    thresholds : sequence of float
+        One or more boundary values that divide the output range into regions.
+        Values are sorted and validated on creation.
+    labels : sequence of str or None
+        Optional human-readable label for every region.  Must have length
+        ``len(thresholds) + 1`` when provided.
+    colors : sequence of str or None
+        Optional Matplotlib-compatible color for every region.  Must have
+        length ``len(thresholds) + 1`` when provided.
 
-    Example::
+    Examples
+    --------
+    .. code-block:: python
 
         pmv_config = ThresholdsConfig(
             thresholds=[-0.5, 0.5],
@@ -204,13 +212,17 @@ class ThresholdsConfig:
 class RegionConfig:
     """Fully-resolved region configuration (internal use only).
 
-    Attributes:
-        output_name: Validated output column / field name.
-        thresholds: Sorted, finite threshold boundary values.
-        labels: Human-readable label for every region
-                (length = ``len(thresholds) + 1``).
-        colors: Matplotlib-compatible color for every region
-                (length = ``len(thresholds) + 1``).
+    Attributes
+    ----------
+    output_name : str
+        Validated output column / field name.
+    thresholds : list of float
+        Sorted, finite threshold boundary values.
+    labels : list of str
+        Human-readable label for every region (length = ``len(thresholds) + 1``).
+    colors : list of str
+        Matplotlib-compatible color for every region
+        (length = ``len(thresholds) + 1``).
     """
 
     output_name: str
@@ -223,9 +235,12 @@ class RegionConfig:
 class BasePlotResult:
     """Minimal result handle shared by all plot types.
 
-    Attributes:
-        fig: Matplotlib figure containing the rendered plot.
-        ax: Matplotlib axis containing the rendered plot.
+    Attributes
+    ----------
+    fig : Figure
+        Matplotlib figure containing the rendered plot.
+    ax : Axes
+        Matplotlib axis containing the rendered plot.
     """
 
     fig: Figure
@@ -446,18 +461,25 @@ def _configure_regions(
     This is the single source of truth for region configuration shared by
     :class:`SummaryPlot` and :class:`ThresholdPlot`.
 
-    Args:
-        output: Output column / field name.
-        thresholds: A :class:`ThresholdsConfig` carrying boundary values and
-            optional labels / colors.
+    Parameters
+    ----------
+    output : str
+        Output column / field name.
+    thresholds : ThresholdsConfig
+        A :class:`ThresholdsConfig` carrying boundary values and optional
+        labels / colors.
 
-    Returns:
+    Returns
+    -------
+    RegionConfig
         A fully validated :class:`RegionConfig`.
 
-    Raises:
-        TypeError: If *output* is not a string.
-        ValueError: If *output* is empty, or thresholds / labels / colors
-            are invalid.
+    Raises
+    ------
+    TypeError
+        If *output* is not a string.
+    ValueError
+        If *output* is empty, or thresholds / labels / colors are invalid.
     """
     if not isinstance(output, str):
         raise TypeError("output must be a string.")

@@ -90,19 +90,25 @@ class BandsConfig:
     Controls which bands are displayed and their appearance.
     Follows the same pattern as :class:`ThresholdsConfig`.
 
-    Attributes:
-        show: Band keys to display.  If ``None``, all bands are shown.
+    Attributes
+    ----------
+    show : sequence of str or None
+        Band keys to display.  If ``None``, all bands are shown.
 
-            - ASHRAE keys: ``"80"``, ``"90"``
-            - EN keys: ``"cat_i"``, ``"cat_ii"``, ``"cat_iii"``
+        - ASHRAE keys: ``"80"``, ``"90"``
+        - EN keys: ``"cat_i"``, ``"cat_ii"``, ``"cat_iii"``
 
-        labels: Custom labels for the visible bands.  Must have the same
-            length as *show* (or the total number of bands if *show* is
-            ``None``).  If ``None``, default labels are used.
-        colors: Custom colors for the visible bands.  Same length rule
-            as *labels*.  If ``None``, default colors are used.
+    labels : sequence of str or None
+        Custom labels for the visible bands.  Must have the same length as
+        *show* (or the total number of bands if *show* is ``None``).  If
+        ``None``, default labels are used.
+    colors : sequence of str or None
+        Custom colors for the visible bands.  Same length rule as *labels*.
+        If ``None``, default colors are used.
 
-    Example::
+    Examples
+    --------
+    .. code-block:: python
 
         # Show only 90% band with custom styling
         config = BandsConfig(
@@ -173,12 +179,18 @@ class _ResolvedBand:
 class AdaptivePlotResult(BasePlotResult):
     """Result from :meth:`AdaptivePlot.plot`.
 
-    Attributes:
-        fig: Matplotlib figure.
-        ax: Matplotlib axes.
-        center_line: The comfort temperature center line artist, or ``None``.
-        fills: Filled comfort band artists (outermost first).
-        legend: Legend artist, or ``None``.
+    Attributes
+    ----------
+    fig : Figure
+        Matplotlib figure.
+    ax : Axes
+        Matplotlib axes.
+    center_line : Line2D or None
+        The comfort temperature center line artist, or ``None``.
+    fills : list of PolyCollection
+        Filled comfort band artists (outermost first).
+    legend : Legend or None
+        Legend artist, or ``None``.
     """
 
     center_line: Line2D | None
@@ -204,7 +216,15 @@ class AdaptivePlot:
         will produce different upper boundary positions.  The lower
         boundaries and the center line are not affected by ce.
 
-    Example::
+    Band keys for selection and customization:
+
+    - **ASHRAE**: ``"80"`` (80% acceptability), ``"90"`` (90% acceptability)
+    - **EN**: ``"cat_i"`` (Category I), ``"cat_ii"`` (Category II),
+      ``"cat_iii"`` (Category III)
+
+    Examples
+    --------
+    .. code-block:: python
 
         from pythermalcomfort.plots.matplotlib import AdaptivePlot
 
@@ -213,12 +233,6 @@ class AdaptivePlot:
             .set_params(tdb=25, tr=25, v=0.1)
             .plot(title="Adaptive Comfort (ASHRAE 55)")
         )
-
-    Band keys for selection and customization:
-
-    - **ASHRAE**: ``"80"`` (80% acceptability), ``"90"`` (90% acceptability)
-    - **EN**: ``"cat_i"`` (Category I), ``"cat_ii"`` (Category II),
-      ``"cat_iii"`` (Category III)
     """
 
     def __init__(
@@ -229,11 +243,13 @@ class AdaptivePlot:
     ) -> None:
         """Initialize an adaptive comfort chart builder.
 
-        Args:
-            standard: Comfort standard, ``'ashrae'`` or ``'en'``.
-            t_running_mean_range: Optional ``(min, max)`` override for the
-                x-axis.  Defaults to the standard's applicability range
-                (10-33.5 °C).
+        Parameters
+        ----------
+        standard : {'ashrae', 'en'}
+            Comfort standard.
+        t_running_mean_range : tuple of float, optional
+            Optional ``(min, max)`` override for the x-axis.  Defaults to the
+            standard's applicability range (10--33.5 °C).
         """
         std = standard.lower().strip()
         if std not in _STANDARD_CONFIGS:
@@ -257,17 +273,25 @@ class AdaptivePlot:
         """Set fixed model parameters.
 
         At minimum ``tdb``, ``tr``, and ``v`` are required.  Additional
-        parameters such as ``units`` or ``limit_inputs`` are forwarded
-        to the model unchanged.
+        parameters such as ``units`` or ``limit_inputs`` are forwarded to the
+        model unchanged.
 
-        .. note::
-            The values of ``tdb``, ``tr``, and ``v`` affect the **cooling
-            effect (ce)**.  When operative temperature exceeds 25 °C and
-            ``v`` ≥ 0.6 m/s, the upper boundaries of comfort bands shift
-            upward.
+        Parameters
+        ----------
+        **kwargs : Any
+            Fixed model inputs.  At minimum ``tdb``, ``tr``, and ``v``
+            are required.
 
-        Returns:
+        Returns
+        -------
+        AdaptivePlot
             Self, to support method chaining.
+
+        Notes
+        -----
+        The values of ``tdb``, ``tr``, and ``v`` affect the **cooling effect
+        (ce)**.  When operative temperature exceeds 25 °C and ``v`` ≥ 0.6 m/s,
+        the upper boundaries of comfort bands shift upward.
         """
         self._fixed_params.update(kwargs)
         return self
@@ -283,29 +307,35 @@ class AdaptivePlot:
 
         Accepts either a pre-built :class:`BandsConfig` or raw parameters.
 
-        Args:
-            show: Controls which bands are shown and, optionally, their
-                appearance.  Accepts three forms:
+        Parameters
+        ----------
+        show : BandsConfig, sequence of str, or None
+            Controls which bands are shown and, optionally, their appearance.
+            Accepts three forms:
 
-                - **BandsConfig** — a fully configured instance; *labels*
-                  and *colors* must not be supplied separately.
-                - **list of band keys** — selects which bands to display;
-                  use *labels* / *colors* for appearance.
-                - **None** — all bands are shown.
+            - **BandsConfig** — a fully configured instance; *labels* and
+              *colors* must not be supplied separately.
+            - **list of band keys** — selects which bands to display; use
+              *labels* / *colors* for appearance.
+            - **None** — all bands are shown.
 
-                ASHRAE keys: ``"80"``, ``"90"``.
-                EN keys: ``"cat_i"``, ``"cat_ii"``, ``"cat_iii"``.
+            ASHRAE keys: ``"80"``, ``"90"``.
+            EN keys: ``"cat_i"``, ``"cat_ii"``, ``"cat_iii"``.
 
-            labels: Custom labels for the visible bands.  Must have the
-                same length as *show* (or the total band count if *show*
-                is ``None``).
-            colors: Custom colors for the visible bands.  Same length
-                rule as *labels*.
+        labels : sequence of str, optional
+            Custom labels for the visible bands.  Must have the same length as
+            *show* (or the total band count if *show* is ``None``).
+        colors : sequence of str, optional
+            Custom colors for the visible bands.  Same length rule as *labels*.
 
-        Returns:
+        Returns
+        -------
+        AdaptivePlot
             Self, to support method chaining.
 
-        Example::
+        Examples
+        --------
+        .. code-block:: python
 
             # Raw parameters
             .set_bands(show=["90"], labels=["90% Zone"], colors=["#FF6B6B"])
@@ -407,23 +437,35 @@ class AdaptivePlot:
     ) -> AdaptivePlotResult:
         """Render the adaptive comfort chart.
 
-        Args:
-            ax: Existing axes.  If ``None``, a new figure is created with a
-                default size of ``(7, 4)`` inches.
-            title: Optional chart title.
-            xlabel: X-axis label.  ``None`` to omit.
-            ylabel: Y-axis label.  ``None`` to omit.
-            legend: Whether to draw a legend.
-            grid: Whether to display background grid lines.
-            show_center_line: Whether to draw the comfort temperature
-                center line.
-            center_line_kws: Overrides for the center line (``ax.plot``).
-            fill_kws: Shared overrides for all bands (``ax.fill_between``).
-                Per-band colors are set via :meth:`set_bands`.
-            legend_kws: Overrides for the legend (``ax.legend``).
+        Parameters
+        ----------
+        ax : Axes, optional
+            Existing axes.  If ``None``, a new figure is created with a
+            default size of ``(7, 4)`` inches.
+        title : str, optional
+            Optional chart title.
+        xlabel : str or None
+            X-axis label.  ``None`` to omit.
+        ylabel : str or None
+            Y-axis label.  ``None`` to omit.
+        legend : bool
+            Whether to draw a legend.
+        grid : bool
+            Whether to display background grid lines.
+        show_center_line : bool
+            Whether to draw the comfort temperature center line.
+        center_line_kws : dict, optional
+            Overrides for the center line (``ax.plot``).
+        fill_kws : dict, optional
+            Shared overrides for all bands (``ax.fill_between``).  Per-band
+            colors are set via :meth:`set_bands`.
+        legend_kws : dict, optional
+            Overrides for the legend (``ax.legend``).
 
-        Returns:
-            :class:`AdaptivePlotResult` with figure, axes, and artists.
+        Returns
+        -------
+        AdaptivePlotResult
+            Result with figure, axes, and artists.
         """
         self._validate_params()
         bands = self._resolve_bands()
