@@ -20,25 +20,18 @@ from pythermalcomfort.plots.matplotlib._shared import (
     RegionConfig,
     ThresholdsConfig,
     _apply_default_links_to_kwargs,
+    _AxisConfig,
     _configure_regions,
     _extract_output_by_name,
     _inspect_model_signature,
+    _parse_axis_range,
     _validate_model_kwargs,
+    _validate_resolution,
 )
 
 OUT_OF_MODEL_LIMITS_COLOR = "#bdbdbd"
 
 _DEFAULT_PARAMETER_LINKS: dict[str, str] = {"tr": "tdb", "tdb": "tr"}
-
-
-@dataclass
-class _AxisConfig:
-    """Axis plotting configuration."""
-
-    name: str
-    min_val: float
-    max_val: float
-    resolution: float
 
 
 @dataclass
@@ -56,32 +49,6 @@ class ThresholdPlotResult(BasePlotResult):
     lines: list[Line2D]
     fills: list[PolyCollection]
     legend: Legend | None
-
-
-def _parse_axis_range(min_val: Any, max_val: Any) -> tuple[float, float]:
-    """Validate and normalize axis bounds."""
-    try:
-        min_float = float(min_val)
-        max_float = float(max_val)
-    except (TypeError, ValueError) as exc:
-        raise ValueError("Axis range values must be numeric.") from exc
-
-    if min_float >= max_float:
-        msg = f"Axis requires min < max (got {min_float} >= {max_float})."
-        raise ValueError(msg)
-
-    return min_float, max_float
-
-
-def _validate_resolution(resolution: Any) -> float:
-    """Validate axis resolution."""
-    try:
-        resolution_float = float(resolution)
-    except (TypeError, ValueError) as exc:
-        raise ValueError("Axis resolution must be numeric.") from exc
-    if resolution_float <= 0:
-        raise ValueError("Axis resolution must be positive.")
-    return resolution_float
 
 
 def _contour_paths_to_lines(
@@ -521,7 +488,6 @@ class ThresholdPlot:
         line_opts.setdefault("linewidth", 1.0)
 
         fill_opts = dict(fill_kws or {})
-        fill_opts.setdefault("alpha", 1)
         fill_opts.setdefault("corner_mask", False)
 
         legend_opts = dict(legend_kws or {})
@@ -597,7 +563,7 @@ class ThresholdPlot:
             handles = [
                 Patch(
                     facecolor=color,
-                    alpha=fill_opts.get("alpha"),
+                    alpha=fill_opts.get("alpha", 1.0),
                     label=label,
                 )
                 for label, color in zip(rc.labels, rc.colors, strict=False)

@@ -13,6 +13,45 @@ from matplotlib import colors as mcolors
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
+# ── axis helpers ───────────────────────────────────────────────────────────
+
+
+@dataclass
+class _AxisConfig:
+    """Axis plotting configuration."""
+
+    name: str
+    min_val: float
+    max_val: float
+    resolution: float
+
+
+def _parse_axis_range(min_val: Any, max_val: Any) -> tuple[float, float]:
+    """Validate and normalize axis bounds."""
+    try:
+        min_float = float(min_val)
+        max_float = float(max_val)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Axis range values must be numeric.") from exc
+
+    if min_float >= max_float:
+        msg = f"Axis requires min < max (got {min_float} >= {max_float})."
+        raise ValueError(msg)
+
+    return min_float, max_float
+
+
+def _validate_resolution(resolution: Any) -> float:
+    """Validate axis resolution."""
+    try:
+        resolution_float = float(resolution)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Axis resolution must be numeric.") from exc
+    if resolution_float <= 0:
+        raise ValueError("Axis resolution must be positive.")
+    return resolution_float
+
+
 # ── public configuration ───────────────────────────────────────────────────
 
 
@@ -57,8 +96,7 @@ class ThresholdsConfig:
             if len(self.labels) != n_regions:
                 msg = f"labels must have length {n_regions} (got {len(self.labels)})."
                 raise ValueError(msg)
-            # Store as plain list[str] for downstream consumption
-            object.__setattr__(self, "labels", [str(label) for label in self.labels])
+            self.labels = [str(label) for label in self.labels]
 
         if self.colors is not None:
             if len(self.colors) != n_regions:
@@ -68,7 +106,7 @@ class ThresholdsConfig:
             if invalid:
                 msg = f"Invalid color value(s): {', '.join(str(c) for c in invalid)}."
                 raise ValueError(msg)
-            object.__setattr__(self, "colors", [str(c) for c in self.colors])
+            self.colors = [str(c) for c in self.colors]
 
 
 # ── internal resolved container ────────────────────────────────────────────
@@ -384,10 +422,11 @@ def _apply_default_links_to_kwargs(
 
 
 def _is_light_color(color: str) -> bool:
-    """Return ``True`` when *color* has a relative luminance above 0.7.
+    """Return ``True`` when *color* has a perceived luminance above 0.7.
 
-    Uses the sRGB coefficients from the WCAG 2.0 definition so that
-    callers can pick a contrasting text colour (black vs. white).
+    Uses WCAG 2.0 channel coefficients applied directly to sRGB values
+    (gamma linearisation is intentionally skipped for simplicity).
+    Accurate enough for choosing contrasting text colour (black vs. white).
     """
     red, green, blue = mcolors.to_rgb(color)
     luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue
