@@ -863,6 +863,35 @@ def operative_tmp(
     raise ValueError(error_message)
 
 
+def adaptive_cooling_effect(
+    v: float | list[float],
+    to: float | list[float],
+) -> float | list[float]:
+    """Return the adaptive model cooling effect for a given air speed and operative temperature.
+
+    The cooling effect is non-zero only when operative temperature is at or
+    above 25 °C **and** air speed meets the minimum threshold (0.6 m/s).
+
+    Parameters
+    ----------
+    v : float or array-like
+        Air speed, [m/s].
+    to : float or array-like
+        Operative temperature, [°C].
+
+    Returns
+    -------
+    ce : float or ndarray
+        Cooling effect magnitude, [°C].
+    """
+    v = np.asarray(v, dtype=float)
+    to = np.asarray(to, dtype=float)
+    magnitude = np.where(
+        v >= 1.2, 2.2, np.where(v >= 0.9, 1.8, np.where(v >= 0.6, 1.2, 0.0))
+    )
+    return np.where(to >= 25.0, magnitude, 0.0)
+
+
 def clo_intrinsic_insulation_ensemble(
     clo_garments: float | list[float],
 ) -> float | list[float]:

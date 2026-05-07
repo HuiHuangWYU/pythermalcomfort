@@ -1,11 +1,9 @@
 """Adaptive comfort chart plotting for ASHRAE 55 and EN 16798.
 
-Comfort band boundaries are computed directly from the model equations
-(t_cmf = slope * t_running_mean + intercept) and drawn as filled regions
-between the lower and upper boundary lines.
-
-The cooling effect is applied to the **upper** boundary only, and only
-where that boundary already exceeds 25 °C, matching the standard definition.
+Comfort band boundaries are computed as smooth lines directly from the
+standard equations.  The slope, intercept, and cooling-effect function are
+imported from the underlying model modules so there is one single source of
+truth for every numeric constant.
 """
 
 from __future__ import annotations
@@ -23,21 +21,12 @@ from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
+from pythermalcomfort.models.adaptive_ashrae import INTERCEPT as _ASHRAE_INTERCEPT
+from pythermalcomfort.models.adaptive_ashrae import SLOPE as _ASHRAE_SLOPE
+from pythermalcomfort.models.adaptive_en import INTERCEPT as _EN_INTERCEPT
+from pythermalcomfort.models.adaptive_en import SLOPE as _EN_SLOPE
 from pythermalcomfort.plots.matplotlib._shared import BasePlotResult, _PlotDefaults
-
-# ── cooling effect ─────────────────────────────────────────────────────────
-
-
-def _ce_value(v: float) -> float:
-    """Return the cooling effect magnitude for a given air speed."""
-    if v < 0.6:
-        return 0.0
-    if v < 0.9:
-        return 1.2
-    if v < 1.2:
-        return 1.8
-    return 2.2
-
+from pythermalcomfort.utilities import adaptive_cooling_effect
 
 # ── band specification ─────────────────────────────────────────────────────
 
@@ -55,8 +44,8 @@ class _BandSpec:
 
 _STANDARD_CONFIGS: dict[str, dict[str, Any]] = {
     "ashrae": {
-        "slope": 0.31,
-        "intercept": 17.8,
+        "slope": _ASHRAE_SLOPE,
+        "intercept": _ASHRAE_INTERCEPT,
         "t_rm_range": (10.0, 33.5),
         "bands": [
             _BandSpec("80", -3.5, 3.5, "80% Acceptability", "#B3D9FF"),
@@ -64,8 +53,8 @@ _STANDARD_CONFIGS: dict[str, dict[str, Any]] = {
         ],
     },
     "en": {
-        "slope": 0.33,
-        "intercept": 18.8,
+        "slope": _EN_SLOPE,
+        "intercept": _EN_INTERCEPT,
         "t_rm_range": (10.0, 33.5),
         "bands": [
             _BandSpec("cat_iii", -5.0, 4.0, "Category III", "#C5E0B4"),
@@ -202,8 +191,9 @@ class AdaptivePlot:
 
     The chart displays comfort bands as filled regions on a plot of
     operative temperature (y-axis) versus prevailing mean outdoor
-    temperature (x-axis).  Band boundaries are computed directly from the
-    standard equations rather than by calling the model on a grid.
+    temperature (x-axis).  Band boundaries are smooth lines computed
+    directly from the standard equations; all numeric constants are
+    imported from the underlying model modules.
 
     The cooling effect (if any) shifts the **upper** boundary of each band
     upward, but only where that boundary already exceeds 25 °C — matching
@@ -431,7 +421,6 @@ class AdaptivePlot:
         slope: float = self._cfg["slope"]
         intercept: float = self._cfg["intercept"]
         t_cmf = slope * t_rm + intercept
-        ce = _ce_value(self._v)
 
         if ax is None:
             fig, ax = plt.subplots(figsize=_PlotDefaults.figsize)
@@ -445,8 +434,9 @@ class AdaptivePlot:
         for band in bands:
             lower = t_cmf + band.spec.lower_offset
             upper_base = t_cmf + band.spec.upper_offset
-            # Cooling effect shifts upper boundary only where it already exceeds 25 °C
-            upper = upper_base + np.where(upper_base >= 25.0, ce, 0.0)
+            # Cooling effect applied only where upper boundary already exceeds 25 °C.
+            # Uses the shared adaptive_cooling_effect imported from utilities.
+            upper = upper_base + adaptive_cooling_effect(self._v, upper_base)
             fill = ax.fill_between(t_rm, lower, upper, color=band.color, **fill_opts)
             fills.append(fill)
 
