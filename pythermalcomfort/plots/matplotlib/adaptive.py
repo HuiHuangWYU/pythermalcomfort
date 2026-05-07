@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Literal
 
 import matplotlib.pyplot as plt
@@ -134,9 +134,6 @@ class BandsConfig:
     labels: Sequence[str] | None = None
     colors: Sequence[str] | None = None
 
-    # Set after validation by AdaptivePlot
-    _validated: bool = field(init=False, repr=False, compare=False, default=False)
-
     def _validate(self, standard: str) -> None:
         """Validate against a specific standard's band keys."""
         valid_keys = set(_BAND_KEYS[standard])
@@ -166,8 +163,6 @@ class BandsConfig:
             if bad:
                 msg = f"Invalid color value(s): {', '.join(str(c) for c in bad)}"
                 raise ValueError(msg)
-
-        self._validated = True
 
 
 # ── resolved band (internal) ──────────────────────────────────────────────
@@ -301,14 +296,17 @@ class AdaptivePlot:
         Accepts either a pre-built :class:`BandsConfig` or raw parameters.
 
         Args:
-            show: A :class:`BandsConfig` instance, **or** a list of band
-                keys to display.  When a ``BandsConfig`` is supplied,
-                *labels* and *colors* must not be given separately.
+            show: Controls which bands are shown and, optionally, their
+                appearance.  Accepts three forms:
 
-                If ``None`` (and not a ``BandsConfig``), all bands are shown.
+                - **BandsConfig** — a fully configured instance; *labels*
+                  and *colors* must not be supplied separately.
+                - **list of band keys** — selects which bands to display;
+                  use *labels* / *colors* for appearance.
+                - **None** — all bands are shown.
 
-                - ASHRAE keys: ``"80"``, ``"90"``
-                - EN keys: ``"cat_i"``, ``"cat_ii"``, ``"cat_iii"``
+                ASHRAE keys: ``"80"``, ``"90"``.
+                EN keys: ``"cat_i"``, ``"cat_ii"``, ``"cat_iii"``.
 
             labels: Custom labels for the visible bands.  Must have the
                 same length as *show* (or the total band count if *show*
@@ -498,6 +496,7 @@ class AdaptivePlot:
             lg_opts.setdefault("framealpha", 0.9)
 
             handles: list[Any] = []
+            # Reversed so the narrowest (strictest) band appears first in the legend.
             for band in reversed(bands):
                 handles.append(
                     Patch(
