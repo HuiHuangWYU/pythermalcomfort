@@ -11,22 +11,24 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
 from matplotlib.colors import ListedColormap, is_color_like
-from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
 from pythermalcomfort.plots.matplotlib._shared import (
+    BasePlotResult,
+    RegionConfig,
+    ThresholdsConfig,
     _apply_default_links_to_kwargs,
-    _build_region_labels,
+    _configure_regions,
     _extract_output_by_name,
     _inspect_model_signature,
-    _normalize_levels,
-    _resolve_region_colors,
     _validate_model_kwargs,
 )
 
 OUT_OF_MODEL_LIMITS_COLOR = "#bdbdbd"
+
+_DEFAULT_PARAMETER_LINKS: dict[str, str] = {"tr": "tdb", "tdb": "tr"}
 
 
 @dataclass
@@ -40,7 +42,7 @@ class _AxisConfig:
 
 
 @dataclass
-class ThresholdPlotResult:
+class ThresholdPlotResult(BasePlotResult):
     """Container with handles returned by :meth:`ThresholdPlot.plot`.
 
     Attributes:
@@ -51,8 +53,6 @@ class ThresholdPlotResult:
         legend: Legend artist if ``legend=True``, otherwise ``None``.
     """
 
-    fig: Figure
-    ax: Axes
     lines: list[Line2D]
     fills: list[PolyCollection]
     legend: Legend | None
@@ -153,15 +153,12 @@ class ThresholdPlot:
                 ``pythermalcomfort.models``). Its signature is inspected to validate
                 axis names and fixed parameters.
         """
-        self.model_func = model_func
-        self.x_axis: _AxisConfig | None = None
-        self.y_axis: _AxisConfig | None = None
-        self.fixed_values: dict[str, Any] = {}
-        self._output_name: str | None = None
-        self._thresholds: list[float] | None = None
-        self._region_labels: list[str] | None = None
-        self._region_colors: list[str] | None = None
-        self._default_links: dict[str, str] = {"tr": "tdb", "tdb": "tr"}
+        self._model_func = model_func
+        self._x_axis: _AxisConfig | None = None
+        self._y_axis: _AxisConfig | None = None
+        self._fixed_values: dict[str, Any] = {}
+        self._region_config: RegionConfig | None = None
+        self._default_links = _DEFAULT_PARAMETER_LINKS
         (
             _,
             self._allowed_args,
@@ -192,11 +189,11 @@ class ThresholdPlot:
             )
             raise ValueError(msg)
 
-        other = self.y_axis if axis_kind == "x" else self.x_axis
+        other = self._y_axis if axis_kind == "x" else self._x_axis
         if other is not None and axis_name == other.name:
             raise ValueError("x and y axis parameters must be different.")
 
-        if axis_name in self.fixed_values:
+        if axis_name in self._fixed_values:
             msg = (
                 f"set_params() already contains axis parameter '{axis_name}'. "
                 f"Remove it before calling set_{axis_kind}_axis()."
@@ -212,7 +209,7 @@ class ThresholdPlot:
             resolution=resolution_float,
         )
 
-        axis_attr = "x_axis" if axis_kind == "x" else "y_axis"
+        axis_attr = "_x_axis" if axis_kind == "x" else "_y_axis"
         setattr(self, axis_attr, axis_config)
         return self
 
@@ -313,7 +310,7 @@ class ThresholdPlot:
                 raise ValueError(msg)
 
         axis_names = {
-            axis.name for axis in (self.x_axis, self.y_axis) if axis is not None
+            axis.name for axis in (self._x_axis, self._y_axis) if axis is not None
         }
         conflicting_axis_keys = sorted(key for key in kwargs if key in axis_names)
         if conflicting_axis_keys:
@@ -324,7 +321,7 @@ class ThresholdPlot:
             )
             raise ValueError(msg)
 
-        self.fixed_values.update(kwargs)
+        self._fixed_values.update(kwargs)
 
         return self
 
@@ -332,18 +329,25 @@ class ThresholdPlot:
         self,
         *,
         output: str,
-        thresholds: Sequence[float],
+        thresholds: ThresholdsConfig | Sequence[float],
         labels: Sequence[str] | None = None,
         colors: Sequence[str] | None = None,
     ) -> ThresholdPlot:
         """Set output variable and threshold region configuration.
 
+        Accepts either a pre-built :class:`ThresholdsConfig` or raw
+        threshold values (with optional *labels* and *colors*).
+
         Args:
             output: Output field name to extract from the model result.
-            thresholds: Threshold boundary values for region splitting.
-            labels: Optional region labels. Must have length
+            thresholds: A :class:`ThresholdsConfig` instance **or** a sequence
+                of numeric boundary values.  When a ``ThresholdsConfig`` is
+                supplied, *labels* and *colors* must not be given separately.
+            labels: Optional region labels (ignored when *thresholds* is a
+                ``ThresholdsConfig``).  Must have length
                 ``len(thresholds) + 1`` when provided.
-            colors: Optional region colors. Must have length
+            colors: Optional region colors (ignored when *thresholds* is a
+                ``ThresholdsConfig``).  Must have length
                 ``len(thresholds) + 1`` when provided.
 
         Returns:
@@ -351,43 +355,37 @@ class ThresholdPlot:
 
         Raises:
             TypeError: If ``output`` is not a string.
-            ValueError: If output name is empty, thresholds/labels/colors are invalid.
+            ValueError: If output name is empty, if *labels* or *colors* are
+                supplied together with a ``ThresholdsConfig``, or if
+                thresholds/labels/colors are invalid.
         """
-        if not isinstance(output, str):
-            raise TypeError("output must be a string.")
-        output_name = output.strip()
-        if not output_name:
-            raise ValueError("output must be a non-empty string.")
+        # Normalise into a ThresholdsConfig
+        if isinstance(thresholds, ThresholdsConfig):
+            if labels is not None or colors is not None:
+                raise ValueError(
+                    "labels and colors must not be provided separately when "
+                    "thresholds is a ThresholdsConfig instance.  Set them "
+                    "inside the ThresholdsConfig instead."
+                )
+            config = thresholds
+        else:
+            config = ThresholdsConfig(
+                thresholds=thresholds, labels=labels, colors=colors
+            )
 
-        normalized_levels = _normalize_levels(thresholds)
-        region_labels = _build_region_labels(
-            output=output_name,
-            levels=normalized_levels,
-            labels=labels,
+        self._region_config = _configure_regions(
+            output=output,
+            thresholds=config,
         )
-        region_colors = _resolve_region_colors(
-            n_regions=len(normalized_levels) + 1,
-            colors=colors,
-        )
-
-        self._output_name = output_name
-        self._thresholds = normalized_levels
-        self._region_labels = region_labels
-        self._region_colors = region_colors
         return self
 
     def _validate_plot_inputs(self, *, fill_kws: Mapping[str, Any] | None) -> None:
         """Validate plot preconditions and plotting keyword constraints."""
-        if self.x_axis is None or self.y_axis is None:
+        if self._x_axis is None or self._y_axis is None:
             raise ValueError(
                 "Axes are not set. Call set_x_axis(...) and set_y_axis(...) first."
             )
-        if (
-            self._output_name is None
-            or self._thresholds is None
-            or self._region_labels is None
-            or self._region_colors is None
-        ):
+        if self._region_config is None:
             raise ValueError(
                 "Regions are not set. Call set_regions(...) before plot(...)."
             )
@@ -406,9 +404,9 @@ class ThresholdPlot:
 
     def _build_call_kwargs(self, x_value: Any, y_value: Any) -> dict[str, Any]:
         """Build validated kwargs for a model evaluation call."""
-        call_kwargs: dict[str, Any] = dict(self.fixed_values)
-        call_kwargs[self.x_axis.name] = x_value
-        call_kwargs[self.y_axis.name] = y_value
+        call_kwargs: dict[str, Any] = dict(self._fixed_values)
+        call_kwargs[self._x_axis.name] = x_value
+        call_kwargs[self._y_axis.name] = y_value
         call_kwargs = _apply_default_links_to_kwargs(
             call_kwargs,
             allowed_args=self._allowed_args,
@@ -426,13 +424,19 @@ class ThresholdPlot:
         self,
     ) -> tuple[float, float, float, float, np.ndarray, np.ndarray]:
         """Build contour mesh grid from axis configs."""
-        x_min = float(self.x_axis.min_val)
-        x_max = float(self.x_axis.max_val)
-        y_min = float(self.y_axis.min_val)
-        y_max = float(self.y_axis.max_val)
+        x_min = float(self._x_axis.min_val)
+        x_max = float(self._x_axis.max_val)
+        y_min = float(self._y_axis.min_val)
+        y_max = float(self._y_axis.max_val)
 
-        x_vals = np.arange(x_min, x_max + 1e-12, self.x_axis.resolution)
-        y_vals = np.arange(y_min, y_max + 1e-12, self.y_axis.resolution)
+        x_vals = np.arange(x_min, x_max, self._x_axis.resolution)
+        if x_vals[-1] < x_max:
+            x_vals = np.append(x_vals, x_max)
+
+        y_vals = np.arange(y_min, y_max, self._y_axis.resolution)
+        if y_vals[-1] < y_max:
+            y_vals = np.append(y_vals, y_max)
+
         if x_vals.size < 2 or y_vals.size < 2:
             msg = (
                 "Axis resolution is too coarse for the chosen ranges. "
@@ -455,7 +459,7 @@ class ThresholdPlot:
         y_flat = np.asarray(y).ravel()
         grid_kwargs = self._build_call_kwargs(x_flat, y_flat)
         try:
-            result = self.model_func(**grid_kwargs)
+            result = self._model_func(**grid_kwargs)
         except Exception as exc:
             msg = f"Failed to evaluate model on contour grid: {exc}"
             raise ValueError(msg) from exc
@@ -510,10 +514,7 @@ class ThresholdPlot:
         self._validate_plot_inputs(fill_kws=fill_kws)
         self._validate_invalid_color(invalid_color)
 
-        output_name = self._output_name
-        normalized_levels = self._thresholds
-        region_labels = self._region_labels
-        region_colors = self._region_colors
+        rc = self._region_config
 
         line_opts = dict(line_kws or {})
         line_opts.setdefault("color", "black")
@@ -534,13 +535,13 @@ class ThresholdPlot:
             fig = ax.figure
 
         x_min, x_max, y_min, y_max, x, y = self._build_grid()
-        z = self._evaluate_grid_output(x=x, y=y, output_name=output_name)
+        z = self._evaluate_grid_output(x=x, y=y, output_name=rc.output_name)
 
         finite = np.isfinite(z)
         invalid = ~finite
         z_masked = np.ma.masked_invalid(z)
 
-        extended_levels = [-np.inf, *normalized_levels, np.inf]
+        extended_levels = [-np.inf, *rc.thresholds, np.inf]
         fills: list[PolyCollection] = []
         if finite.any():
             filled_contours = ax.contourf(
@@ -548,7 +549,7 @@ class ThresholdPlot:
                 y,
                 z_masked,
                 levels=extended_levels,
-                colors=region_colors,
+                colors=rc.colors,
                 extend="neither",
                 **fill_opts,
             )
@@ -583,7 +584,7 @@ class ThresholdPlot:
         lines: list[Line2D] = []
         if show_lines and finite.any():
             contour_lines = ax.contour(
-                x, y, z_masked, levels=normalized_levels, antialiased=True
+                x, y, z_masked, levels=rc.thresholds, antialiased=True
             )
             lines = _contour_paths_to_lines(
                 ax,
@@ -595,11 +596,11 @@ class ThresholdPlot:
         if legend:
             handles = [
                 Patch(
-                    facecolor=region_colors[index],
+                    facecolor=color,
                     alpha=fill_opts.get("alpha"),
-                    label=region_labels[index],
+                    label=label,
                 )
-                for index in range(len(region_labels))
+                for label, color in zip(rc.labels, rc.colors, strict=False)
             ]
             if invalid.any():
                 handles.append(
@@ -617,8 +618,8 @@ class ThresholdPlot:
 
         ax.set_xlim(x_min, x_max)
         ax.set_ylim(y_min, y_max)
-        ax.set_xlabel(self.x_axis.name)
-        ax.set_ylabel(self.y_axis.name)
+        ax.set_xlabel(self._x_axis.name)
+        ax.set_ylabel(self._y_axis.name)
         if title is not None:
             ax.set_title(title)
 

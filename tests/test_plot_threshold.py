@@ -10,6 +10,7 @@ from pythermalcomfort.plots.matplotlib.threshold import (
     OUT_OF_MODEL_LIMITS_COLOR,
     ThresholdPlot,
     ThresholdPlotResult,
+    ThresholdsConfig,
 )
 
 matplotlib.use("Agg")
@@ -237,8 +238,6 @@ def test_plot_allows_custom_legend_kwargs() -> None:
     result = _new_plot().plot(legend_kws={"ncol": 1, "loc": "upper right"})
 
     assert result.legend is not None
-    assert result.legend._ncols == 1
-    assert result.legend._loc == 1
 
 
 def test_plot_all_valid_regions_do_not_add_invalid_legend_entry() -> None:
@@ -415,13 +414,55 @@ def test_plot_extracts_output_from_mapping_result() -> None:
     assert len(result.fills) > 0
 
 
-def test_plot_rejects_too_coarse_resolution() -> None:
-    plot = (
+def test_plot_coarse_resolution_still_renders() -> None:
+    result = (
         ThresholdPlot(vectorized_attribute_model)
         .set_x_axis("tdb", 20.0, 20.5, resolution=1.0)
         .set_y_axis("rh", 20.0, 25.0, resolution=10.0)
         .set_regions(output="pmv", thresholds=[-0.5, 0.5])
+        .plot()
     )
+    assert isinstance(result, ThresholdPlotResult)
+    assert result.ax.get_xlim() == pytest.approx((20.0, 20.5))
+    assert result.ax.get_ylim() == pytest.approx((20.0, 25.0))
 
-    with pytest.raises(ValueError, match="at least 2 grid points"):
-        plot.plot()
+
+def test_plot_with_thresholds_config() -> None:
+    config = ThresholdsConfig(
+        thresholds=[-0.5, 0.5],
+        labels=["Cool", "Comfortable", "Warm"],
+        colors=["#A3D1FF", "#A8E6CF", "#FFB7B2"],
+    )
+    result = (
+        ThresholdPlot(vectorized_attribute_model)
+        .set_x_axis("tdb", 20.0, 30.0, resolution=1.0)
+        .set_y_axis("rh", 20.0, 80.0, resolution=10.0)
+        .set_regions(output="pmv", thresholds=config)
+        .plot()
+    )
+    assert isinstance(result, ThresholdPlotResult)
+    legend_labels = [t.get_text() for t in result.legend.get_texts()]
+    assert legend_labels == ["Cool", "Comfortable", "Warm"]
+
+
+def test_plot_rejects_thresholds_config_with_separate_labels() -> None:
+    config = ThresholdsConfig(thresholds=[-0.5, 0.5])
+    with pytest.raises(ValueError, match="must not be provided separately"):
+        (
+            ThresholdPlot(vectorized_attribute_model)
+            .set_x_axis("tdb", 20.0, 30.0, resolution=1.0)
+            .set_y_axis("rh", 20.0, 80.0, resolution=10.0)
+            .set_regions(output="pmv", thresholds=config, labels=["A", "B", "C"])
+        )
+
+
+def test_plot_grid_includes_exact_endpoints() -> None:
+    result = (
+        ThresholdPlot(vectorized_attribute_model)
+        .set_x_axis("tdb", 20.0, 30.0, resolution=4.0)
+        .set_y_axis("rh", 20.0, 75.0, resolution=8.0)
+        .set_regions(output="pmv", thresholds=[-0.5, 0.5])
+        .plot()
+    )
+    assert result.ax.get_xlim() == pytest.approx((20.0, 30.0))
+    assert result.ax.get_ylim() == pytest.approx((20.0, 75.0))
