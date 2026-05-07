@@ -96,7 +96,11 @@ def _validate_output_column(df: pd.DataFrame, output: str) -> str:
 
 
 def _validate_output_values(df: pd.DataFrame, output_column: str) -> None:
-    """Ensure output column contains numeric finite values only."""
+    """Ensure output column contains numeric finite values only.
+
+    Raises rather than silently dropping rows so callers are aware of missing
+    data and can decide how to handle it before plotting.
+    """
     numeric_values = pd.to_numeric(df[output_column], errors="coerce")
     invalid_mask = ~numeric_values.notna() | ~np.isfinite(numeric_values.to_numpy())
     if invalid_mask.any():
@@ -391,7 +395,8 @@ class SummaryPlot:
         """Render a threshold summary plot for the configured output column.
 
         Args:
-            ax: Existing axis to draw on. If ``None``, a new figure/axis is created.
+            ax: Existing axis to draw on. If ``None``, a new figure/axis is created
+                with a default size of ``(6, 3.5)`` inches.
             title: Optional axis title.
             vertical: If ``True``, render a vertical stacked bar; otherwise horizontal.
 
