@@ -17,8 +17,6 @@ from matplotlib.patches import Patch
 
 from pythermalcomfort.plots.matplotlib._shared import BasePlotResult, _PlotDefaults
 
-# ── band configuration ────────────────────────────────────────────────────
-
 
 @dataclass(frozen=True)
 class _BandDef:
