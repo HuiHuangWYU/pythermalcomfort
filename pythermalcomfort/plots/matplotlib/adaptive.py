@@ -1,10 +1,18 @@
-"""Adaptive comfort chart plotting for ASHRAE 55 and EN 16798."""
+"""Adaptive comfort chart plotting for ASHRAE 55 and EN 16798.
+
+Comfort band boundaries are computed directly from the model equations
+(t_cmf = slope * t_running_mean + intercept) and drawn as filled regions
+between the lower and upper boundary lines.
+
+The cooling effect is applied to the **upper** boundary only, and only
+where that boundary already exceeds 25 °C, matching the standard definition.
+"""
 
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,60 +25,59 @@ from matplotlib.patches import Patch
 
 from pythermalcomfort.plots.matplotlib._shared import BasePlotResult, _PlotDefaults
 
+# ── cooling effect ─────────────────────────────────────────────────────────
+
+
+def _ce_value(v: float) -> float:
+    """Return the cooling effect magnitude for a given air speed."""
+    if v < 0.6:
+        return 0.0
+    if v < 0.9:
+        return 1.2
+    if v < 1.2:
+        return 1.8
+    return 2.2
+
+
+# ── band specification ─────────────────────────────────────────────────────
+
 
 @dataclass(frozen=True)
-class _BandDef:
-    """Internal definition of one comfort band."""
+class _BandSpec:
+    """Static specification of one comfort band."""
 
     key: str
-    low_field: str
-    up_field: str
+    lower_offset: float  # below t_cmf (negative)
+    upper_offset: float  # above t_cmf (positive, before cooling effect)
     default_label: str
     default_color: str
 
 
 _STANDARD_CONFIGS: dict[str, dict[str, Any]] = {
     "ashrae": {
-        "center_field": "tmp_cmf",
+        "slope": 0.31,
+        "intercept": 17.8,
         "t_rm_range": (10.0, 33.5),
-        "required_params": {"tdb", "tr", "v"},
         "bands": [
-            _BandDef(
-                "80", "tmp_cmf_80_low", "tmp_cmf_80_up", "80% Acceptability", "#B3D9FF"
-            ),
-            _BandDef(
-                "90", "tmp_cmf_90_low", "tmp_cmf_90_up", "90% Acceptability", "#6BB3FF"
-            ),
+            _BandSpec("80", -3.5, 3.5, "80% Acceptability", "#B3D9FF"),
+            _BandSpec("90", -2.5, 2.5, "90% Acceptability", "#6BB3FF"),
         ],
     },
     "en": {
-        "center_field": "tmp_cmf",
+        "slope": 0.33,
+        "intercept": 18.8,
         "t_rm_range": (10.0, 33.5),
-        "required_params": {"tdb", "tr", "v"},
         "bands": [
-            _BandDef(
-                "cat_iii",
-                "tmp_cmf_cat_iii_low",
-                "tmp_cmf_cat_iii_up",
-                "Category III",
-                "#C5E0B4",
-            ),
-            _BandDef(
-                "cat_ii",
-                "tmp_cmf_cat_ii_low",
-                "tmp_cmf_cat_ii_up",
-                "Category II",
-                "#A9D18E",
-            ),
-            _BandDef(
-                "cat_i",
-                "tmp_cmf_cat_i_low",
-                "tmp_cmf_cat_i_up",
-                "Category I",
-                "#70AD47",
-            ),
+            _BandSpec("cat_iii", -5.0, 4.0, "Category III", "#C5E0B4"),
+            _BandSpec("cat_ii", -4.0, 3.0, "Category II", "#A9D18E"),
+            _BandSpec("cat_i", -3.0, 2.0, "Category I", "#70AD47"),
         ],
     },
+}
+
+_MODEL_TO_STANDARD: dict[str, str] = {
+    "adaptive_ashrae": "ashrae",
+    "adaptive_en": "en",
 }
 
 _BAND_KEYS: dict[str, list[str]] = {
@@ -86,7 +93,6 @@ class BandsConfig:
     """Reusable comfort band configuration.
 
     Controls which bands are displayed and their appearance.
-    Follows the same pattern as :class:`ThresholdsConfig`.
 
     Attributes
     ----------
@@ -108,17 +114,10 @@ class BandsConfig:
     --------
     .. code-block:: python
 
-        # Show only 90% band with custom styling
         config = BandsConfig(
             show=["90"],
             labels=["90% Comfort Zone"],
             colors=["#FF6B6B"],
-        )
-
-        # Customize all ASHRAE bands
-        config = BandsConfig(
-            labels=["Wider Zone", "Narrower Zone"],
-            colors=["#AECDE1", "#5BA3CF"],
         )
     """
 
@@ -164,8 +163,7 @@ class BandsConfig:
 class _ResolvedBand:
     """A band with all overrides applied, ready to render."""
 
-    low_field: str
-    up_field: str
+    spec: _BandSpec
     label: str
     color: str
 
@@ -204,15 +202,12 @@ class AdaptivePlot:
 
     The chart displays comfort bands as filled regions on a plot of
     operative temperature (y-axis) versus prevailing mean outdoor
-    temperature (x-axis).
+    temperature (x-axis).  Band boundaries are computed directly from the
+    standard equations rather than by calling the model on a grid.
 
-    .. note::
-        The model parameters ``tdb``, ``tr``, and ``v`` influence the
-        **cooling effect (ce)**, which shifts the upper boundary of each
-        comfort band upward when operative temperature exceeds 25 °C and
-        air speed exceeds 0.6 m/s.  Different ``tdb``/``tr``/``v`` values
-        will produce different upper boundary positions.  The lower
-        boundaries and the center line are not affected by ce.
+    The cooling effect (if any) shifts the **upper** boundary of each band
+    upward, but only where that boundary already exceeds 25 °C — matching
+    the standard definition.
 
     Band keys for selection and customization:
 
@@ -224,18 +219,19 @@ class AdaptivePlot:
     --------
     .. code-block:: python
 
+        from pythermalcomfort.models import adaptive_ashrae
         from pythermalcomfort.plots.matplotlib import AdaptivePlot
 
         result = (
-            AdaptivePlot("ashrae")
-            .set_params(tdb=25, tr=25, v=0.1)
+            AdaptivePlot(adaptive_ashrae)
+            .set_params(v=0.5)
             .plot(title="Adaptive Comfort (ASHRAE 55)")
         )
     """
 
     def __init__(
         self,
-        standard: Literal["ashrae", "en"],
+        model_func: Any,
         *,
         t_running_mean_range: tuple[float, float] | None = None,
     ) -> None:
@@ -243,55 +239,55 @@ class AdaptivePlot:
 
         Parameters
         ----------
-        standard : {'ashrae', 'en'}
-            Comfort standard.
+        model_func : callable
+            The adaptive comfort model function.  Must be ``adaptive_ashrae``
+            or ``adaptive_en`` from :mod:`pythermalcomfort.models`.
         t_running_mean_range : tuple of float, optional
-            Optional ``(min, max)`` override for the x-axis.  Defaults to the
-            standard's applicability range (10--33.5 °C).
+            Optional ``(min, max)`` override for the x-axis range.  Defaults
+            to the standard's applicability range (10--33.5 °C).
+
+        Raises
+        ------
+        ValueError
+            If *model_func* is not a recognized adaptive model, or if
+            *t_running_mean_range* has ``min >= max``.
         """
-        std = standard.lower().strip()
-        if std not in _STANDARD_CONFIGS:
-            msg = f"Unknown standard '{standard}'. Must be 'ashrae' or 'en'."
+        name = getattr(model_func, "__name__", "")
+        if name not in _MODEL_TO_STANDARD:
+            valid = ", ".join(sorted(_MODEL_TO_STANDARD))
+            msg = (
+                f"model_func must be one of the adaptive model functions "
+                f"({valid}), got '{name}'."
+            )
             raise ValueError(msg)
 
-        self._standard = std
-        self._cfg = _STANDARD_CONFIGS[std]
-        self._fixed_params: dict[str, Any] = {}
+        self._standard = _MODEL_TO_STANDARD[name]
+        self._cfg = _STANDARD_CONFIGS[self._standard]
+        self._v: float = 0.1
         self._bands_config: BandsConfig | None = None
 
         if t_running_mean_range is not None:
             lo, hi = float(t_running_mean_range[0]), float(t_running_mean_range[1])
             if lo >= hi:
                 raise ValueError("t_running_mean_range must have min < max.")
-            self._t_rm_range = (lo, hi)
+            self._t_rm_range: tuple[float, float] = (lo, hi)
         else:
             self._t_rm_range = self._cfg["t_rm_range"]
 
-    def set_params(self, **kwargs: Any) -> AdaptivePlot:
-        """Set fixed model parameters.
-
-        At minimum ``tdb``, ``tr``, and ``v`` are required.  Additional
-        parameters such as ``units`` or ``limit_inputs`` are forwarded to the
-        model unchanged.
+    def set_params(self, *, v: float) -> AdaptivePlot:
+        """Set the air speed used to compute the cooling effect.
 
         Parameters
         ----------
-        **kwargs : Any
-            Fixed model inputs.  At minimum ``tdb``, ``tr``, and ``v``
-            are required.
+        v : float
+            Air speed in m/s.  Values below 0.6 m/s produce no cooling effect.
 
         Returns
         -------
         AdaptivePlot
             Self, to support method chaining.
-
-        Notes
-        -----
-        The values of ``tdb``, ``tr``, and ``v`` affect the **cooling effect
-        (ce)**.  When operative temperature exceeds 25 °C and ``v`` ≥ 0.6 m/s,
-        the upper boundaries of comfort bands shift upward.
         """
-        self._fixed_params.update(kwargs)
+        self._v = float(v)
         return self
 
     def set_bands(
@@ -309,7 +305,6 @@ class AdaptivePlot:
         ----------
         show : BandsConfig, sequence of str, or None
             Controls which bands are shown and, optionally, their appearance.
-            Accepts three forms:
 
             - **BandsConfig** — a fully configured instance; *labels* and
               *colors* must not be supplied separately.
@@ -359,65 +354,26 @@ class AdaptivePlot:
 
     def _resolve_bands(self) -> list[_ResolvedBand]:
         """Return bands with all user overrides applied."""
-        all_defs: list[_BandDef] = self._cfg["bands"]
+        all_specs: list[_BandSpec] = self._cfg["bands"]
         cfg = self._bands_config
 
         if cfg is not None and cfg.show is not None:
             show_set = set(cfg.show)
-            visible_defs = [d for d in all_defs if d.key in show_set]
+            visible_specs = [s for s in all_specs if s.key in show_set]
         else:
-            visible_defs = list(all_defs)
+            visible_specs = list(all_specs)
 
         resolved: list[_ResolvedBand] = []
-        for i, d in enumerate(visible_defs):
-            label = d.default_label
-            color = d.default_color
+        for i, spec in enumerate(visible_specs):
+            label = spec.default_label
+            color = spec.default_color
             if cfg is not None:
                 if cfg.labels is not None:
                     label = str(cfg.labels[i])
                 if cfg.colors is not None:
                     color = str(cfg.colors[i])
-            resolved.append(
-                _ResolvedBand(
-                    low_field=d.low_field,
-                    up_field=d.up_field,
-                    label=label,
-                    color=color,
-                )
-            )
+            resolved.append(_ResolvedBand(spec=spec, label=label, color=color))
         return resolved
-
-    def _load_model(self) -> Any:
-        """Import and return the model function."""
-        if self._standard == "ashrae":
-            from pythermalcomfort.models import adaptive_ashrae
-
-            return adaptive_ashrae
-        from pythermalcomfort.models import adaptive_en
-
-        return adaptive_en
-
-    def _validate_params(self) -> None:
-        """Ensure all required fixed parameters have been set."""
-        required: set[str] = self._cfg["required_params"]
-        missing = sorted(required - set(self._fixed_params))
-        if missing:
-            msg = (
-                f"Missing required parameter(s): {', '.join(missing)}. "
-                "Call set_params() first."
-            )
-            raise ValueError(msg)
-
-    def _evaluate(self, t_rm: np.ndarray) -> Any:
-        """Call the model across the t_running_mean array."""
-        model = self._load_model()
-        kwargs = dict(self._fixed_params)
-        kwargs["t_running_mean"] = t_rm
-        try:
-            return model(**kwargs)
-        except Exception as exc:
-            msg = f"Model evaluation failed: {exc}"
-            raise ValueError(msg) from exc
 
     def plot(
         self,
@@ -465,7 +421,6 @@ class AdaptivePlot:
         AdaptivePlotResult
             Result with figure, axes, and artists.
         """
-        self._validate_params()
         bands = self._resolve_bands()
 
         t_rm = np.linspace(
@@ -473,7 +428,10 @@ class AdaptivePlot:
             self._t_rm_range[1],
             _PlotDefaults.Adaptive.n_points,
         )
-        result = self._evaluate(t_rm)
+        slope: float = self._cfg["slope"]
+        intercept: float = self._cfg["intercept"]
+        t_cmf = slope * t_rm + intercept
+        ce = _ce_value(self._v)
 
         if ax is None:
             fig, ax = plt.subplots(figsize=_PlotDefaults.figsize)
@@ -483,51 +441,29 @@ class AdaptivePlot:
         fill_opts = dict(fill_kws or {})
         fill_opts.setdefault("alpha", _PlotDefaults.fill_alpha)
 
-        # Draw bands (outermost first)
         fills: list[PolyCollection] = []
         for band in bands:
-            low = np.asarray(getattr(result, band.low_field), dtype=float)
-            up = np.asarray(getattr(result, band.up_field), dtype=float)
-            valid = np.isfinite(low) & np.isfinite(up)
-            if not valid.any():
-                continue
-            fill = ax.fill_between(
-                t_rm[valid],
-                low[valid],
-                up[valid],
-                color=band.color,
-                **fill_opts,
-            )
+            lower = t_cmf + band.spec.lower_offset
+            upper_base = t_cmf + band.spec.upper_offset
+            # Cooling effect shifts upper boundary only where it already exceeds 25 °C
+            upper = upper_base + np.where(upper_base >= 25.0, ce, 0.0)
+            fill = ax.fill_between(t_rm, lower, upper, color=band.color, **fill_opts)
             fills.append(fill)
 
-        # Center line
         center_line_artist: Line2D | None = None
         if show_center_line:
-            center_vals = np.asarray(
-                getattr(result, self._cfg["center_field"]),
-                dtype=float,
-            )
-            valid = np.isfinite(center_vals)
-            if valid.any():
-                cl_opts = dict(_PlotDefaults.Adaptive.center_line_defaults)
-                if center_line_kws:
-                    cl_opts.update(center_line_kws)
-                (center_line_artist,) = ax.plot(
-                    t_rm[valid],
-                    center_vals[valid],
-                    **cl_opts,
-                )
+            cl_opts = dict(_PlotDefaults.Adaptive.center_line_defaults)
+            if center_line_kws:
+                cl_opts.update(center_line_kws)
+            (center_line_artist,) = ax.plot(t_rm, t_cmf, **cl_opts)
 
-        # Legend (innermost first, then center line)
         legend_artist: Legend | None = None
         if legend:
             lg_opts = dict(legend_kws or {})
             lg_opts.setdefault("loc", _PlotDefaults.Adaptive.legend_loc)
             lg_opts.setdefault("frameon", _PlotDefaults.Adaptive.legend_frameon)
-            lg_opts.setdefault("framealpha", _PlotDefaults.Adaptive.legend_framealpha)
 
             handles: list[Any] = []
-            # Reversed so the narrowest (strictest) band appears first in the legend.
             for band in reversed(bands):
                 handles.append(
                     Patch(
@@ -547,7 +483,6 @@ class AdaptivePlot:
                 )
             legend_artist = ax.legend(handles=handles, **lg_opts)
 
-        # Grid
         if grid:
             ax.grid(
                 True,
@@ -556,7 +491,6 @@ class AdaptivePlot:
                 alpha=_PlotDefaults.Adaptive.grid_alpha,
             )
 
-        # Labels and limits
         if xlabel is not None:
             ax.set_xlabel(xlabel)
         if ylabel is not None:

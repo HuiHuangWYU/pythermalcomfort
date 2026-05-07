@@ -103,8 +103,7 @@ class _PlotDefaults:
             "linestyle": "--",
         }
         legend_loc: str = "lower right"
-        legend_frameon: bool = True
-        legend_framealpha: float = 0.9
+        legend_frameon: bool = False
         grid_linestyle: str = "--"
         grid_linewidth: float = 0.5
         grid_alpha: float = 0.7
