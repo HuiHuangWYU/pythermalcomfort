@@ -1,4 +1,5 @@
 from pythermalcomfort.plots.matplotlib._shared import ThresholdsConfig
+from pythermalcomfort.plots.matplotlib.psychrometric import PsychrometricPlot
 from pythermalcomfort.plots.matplotlib.summary import SummaryPlot, SummaryPlotResult
 from pythermalcomfort.plots.matplotlib.threshold import (
     ThresholdPlot,
@@ -11,4 +12,5 @@ __all__ = [
     "ThresholdPlotResult",
     "SummaryPlot",
     "SummaryPlotResult",
+    "PsychrometricPlot",
 ]

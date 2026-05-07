@@ -74,3 +74,10 @@ Summary Plot
 
 .. autoclass:: pythermalcomfort.plots.matplotlib.SummaryPlotResult
     :members:
+
+Psychrometric Plot
+------------------
+
+.. autoclass:: pythermalcomfort.plots.matplotlib.PsychrometricPlot
+    :members: __init__, set_x_axis, set_y_axis, set_params, set_regions, plot
+    :member-order: bysource
