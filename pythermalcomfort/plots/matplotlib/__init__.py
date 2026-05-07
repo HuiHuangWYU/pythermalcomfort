@@ -1,4 +1,9 @@
 from pythermalcomfort.plots.matplotlib._shared import ThresholdsConfig
+from pythermalcomfort.plots.matplotlib.adaptive import (
+    AdaptivePlot,
+    AdaptivePlotResult,
+    BandsConfig,
+)
 from pythermalcomfort.plots.matplotlib.psychrometric import PsychrometricPlot
 from pythermalcomfort.plots.matplotlib.summary import SummaryPlot, SummaryPlotResult
 from pythermalcomfort.plots.matplotlib.threshold import (
@@ -13,4 +18,7 @@ __all__ = [
     "SummaryPlot",
     "SummaryPlotResult",
     "PsychrometricPlot",
+    "AdaptivePlot",
+    "AdaptivePlotResult",
+    "BandsConfig",
 ]
