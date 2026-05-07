@@ -13,11 +13,11 @@ from pythermalcomfort.plots.matplotlib._shared import (
     _AxisConfig,
     _extract_output_by_name,
     _parse_axis_range,
+    _PlotDefaults,
     _validate_model_kwargs,
     _validate_resolution,
 )
 from pythermalcomfort.plots.matplotlib.threshold import (
-    OUT_OF_MODEL_LIMITS_COLOR,
     ThresholdPlot,
     ThresholdPlotResult,
 )
@@ -149,7 +149,7 @@ class PsychrometricPlot(ThresholdPlot):
         y_flat = np.asarray(y).ravel()  # hr (kg/kg)
 
         # Reverse-calculate RH from humidity ratio and dry-bulb temperature.
-        p_atm = 101325.0
+        p_atm = _PlotDefaults.Psychrometric.p_atm
         p_vap = (y_flat * p_atm) / (0.62198 + y_flat)
         p_sat_values = p_sat(x_flat)
         rh_flat = (p_vap / p_sat_values) * 100.0
@@ -206,7 +206,7 @@ class PsychrometricPlot(ThresholdPlot):
         line_kws: Mapping[str, Any] | None = None,
         fill_kws: Mapping[str, Any] | None = None,
         legend_kws: Mapping[str, Any] | None = None,
-        invalid_color: str = OUT_OF_MODEL_LIMITS_COLOR,
+        invalid_color: str = _PlotDefaults.color_out_of_model,
     ) -> ThresholdPlotResult:
         """Render the psychrometric chart with threshold regions and RH curves.
 
@@ -245,8 +245,14 @@ class PsychrometricPlot(ThresholdPlot):
         )
         ax = result.ax
 
-        tdb_dense = np.linspace(self._x_axis.min_val, self._x_axis.max_val, 500)
-        label_offset = (self._y_axis.max_val - self._y_axis.min_val) * 0.01
+        tdb_dense = np.linspace(
+            self._x_axis.min_val,
+            self._x_axis.max_val,
+            _PlotDefaults.Psychrometric.n_tdb_points,
+        )
+        label_offset = (
+            self._y_axis.max_val - self._y_axis.min_val
+        ) * _PlotDefaults.Psychrometric.rh_label_offset_fraction
 
         # White fill hides the grey out-of-model patch above the RH = 100% curve.
         hr_100 = psy_ta_rh(tdb_dense, np.full_like(tdb_dense, 100.0)).hr
@@ -255,11 +261,12 @@ class PsychrometricPlot(ThresholdPlot):
             hr_100,
             self._y_axis.max_val,
             color="white",
-            zorder=1.6,
+            zorder=_PlotDefaults.Psychrometric.zorder_rh_mask,
             edgecolor="none",
         )
 
-        for rh_target in range(10, 110, 10):
+        step = _PlotDefaults.Psychrometric.rh_curve_step
+        for rh_target in range(step, 110, step):
             hr_line = psy_ta_rh(tdb_dense, np.full_like(tdb_dense, float(rh_target))).hr
             in_range = hr_line <= self._y_axis.max_val
             if not in_range.any():
@@ -267,19 +274,19 @@ class PsychrometricPlot(ThresholdPlot):
             ax.plot(
                 tdb_dense[in_range],
                 hr_line[in_range],
-                color="#a0a0a0",
+                color=_PlotDefaults.Psychrometric.rh_line_color,
                 linestyle=":",
-                linewidth=0.8,
-                zorder=2.0,
+                linewidth=_PlotDefaults.Psychrometric.rh_line_linewidth,
+                zorder=_PlotDefaults.Psychrometric.zorder_rh_lines,
             )
             last_idx = int(np.where(in_range)[0][-1])
             ax.text(
                 tdb_dense[last_idx],
                 hr_line[last_idx] + label_offset,
                 f"{rh_target}%",
-                color="#a0a0a0",
-                fontsize=8,
-                zorder=2.0,
+                color=_PlotDefaults.Psychrometric.rh_line_color,
+                fontsize=_PlotDefaults.Psychrometric.rh_label_fontsize,
+                zorder=_PlotDefaults.Psychrometric.zorder_rh_lines,
             )
 
         ax.set_xlim(self._x_axis.min_val, self._x_axis.max_val)

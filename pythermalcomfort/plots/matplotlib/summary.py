@@ -17,36 +17,8 @@ from pythermalcomfort.plots.matplotlib._shared import (
     ThresholdsConfig,
     _configure_regions,
     _is_light_color,
+    _PlotDefaults,
 )
-
-# ── visual constants ───────────────────────────────────────────────────────
-
-# Title
-_TITLE_FONTSIZE: int = 13
-_TITLE_PAD: int = 10
-
-# Bars (shared)
-_BAR_EDGECOLOR: str = "white"
-_BAR_LINEWIDTH: float = 1.0
-
-# Horizontal layout
-_H_XLIM: tuple[float, float] = (0.0, 100.0)
-_H_YLIM: tuple[float, float] = (-0.6, 0.6)
-_H_BAR_Y: float = 0.0
-_H_BAR_HEIGHT: float = 0.36
-_H_LABEL_Y: float = 0.34
-
-# Vertical layout
-_V_XLIM: tuple[float, float] = (-0.75, 0.9)
-_V_YLIM: tuple[float, float] = (0.0, 100.0)
-_V_BAR_X: float = 0.0
-_V_BAR_WIDTH: float = 0.42
-_V_LABEL_X_OFFSET: float = 0.38
-
-# Annotation text
-_PERCENTAGE_FONTSIZE: int = 12
-_LABEL_FONTSIZE: int = 11
-
 
 # ── result container ───────────────────────────────────────────────────────
 
@@ -156,7 +128,11 @@ def _prepare_axis(ax: Axes, *, title: str | None) -> None:
         spine.set_visible(False)
 
     if title is not None:
-        ax.set_title(title, fontsize=_TITLE_FONTSIZE, pad=_TITLE_PAD)
+        ax.set_title(
+            title,
+            fontsize=_PlotDefaults.title_fontsize,
+            pad=_PlotDefaults.Summary.title_pad,
+        )
 
 
 # ── annotation helpers ────────────────────────────────────────────────────
@@ -177,7 +153,7 @@ def _add_center_text(
         text,
         ha="center",
         va="center",
-        fontsize=_PERCENTAGE_FONTSIZE,
+        fontsize=_PlotDefaults.Summary.percentage_fontsize,
         fontweight="bold",
         color=color,
     )
@@ -215,7 +191,7 @@ def _add_region_annotations(
             label,
             ha=label_ha,
             va=label_va,
-            fontsize=_LABEL_FONTSIZE,
+            fontsize=_PlotDefaults.Summary.label_fontsize,
             color=label_color,
         ),
     ]
@@ -234,14 +210,15 @@ def _plot_summary(
     region_colors: Sequence[str],
 ) -> list[Any]:
     """Render a stacked summary bar (horizontal *or* vertical) with annotations."""
+    D = _PlotDefaults.Summary
     artists: list[Any] = []
 
     if vertical:
-        ax.set_xlim(*_V_XLIM)
-        ax.set_ylim(*_V_YLIM)
+        ax.set_xlim(*D.v_xlim)
+        ax.set_ylim(*D.v_ylim)
     else:
-        ax.set_xlim(*_H_XLIM)
-        ax.set_ylim(*_H_YLIM)
+        ax.set_xlim(*D.h_xlim)
+        ax.set_ylim(*D.h_ylim)
 
     cumulative = 0.0
 
@@ -250,35 +227,35 @@ def _plot_summary(
 
         if vertical:
             bar = ax.bar(
-                x=_V_BAR_X,
+                x=D.v_bar_x,
                 height=value,
-                width=_V_BAR_WIDTH,
+                width=D.v_bar_width,
                 bottom=cumulative,
                 color=color,
-                edgecolor=_BAR_EDGECOLOR,
-                linewidth=_BAR_LINEWIDTH,
+                edgecolor=D.bar_edgecolor,
+                linewidth=D.bar_linewidth,
             )
         else:
             bar = ax.barh(
-                y=_H_BAR_Y,
+                y=D.h_bar_y,
                 width=value,
                 left=cumulative,
-                height=_H_BAR_HEIGHT,
+                height=D.h_bar_height,
                 color=color,
-                edgecolor=_BAR_EDGECOLOR,
-                linewidth=_BAR_LINEWIDTH,
+                edgecolor=D.bar_edgecolor,
+                linewidth=D.bar_linewidth,
             )
         artists.append(bar)
 
         if value > 0:
             if vertical:
                 center_y = cumulative + value / 2
-                pct_x, pct_y = _V_BAR_X, center_y
-                lbl_x, lbl_y = _V_BAR_X + _V_LABEL_X_OFFSET, center_y
+                pct_x, pct_y = D.v_bar_x, center_y
+                lbl_x, lbl_y = D.v_bar_x + D.v_label_x_offset, center_y
                 lbl_ha, lbl_va = "left", "center"
             else:
-                pct_x, pct_y = cumulative + value / 2, _H_BAR_Y
-                lbl_x, lbl_y = cumulative + value / 2, _H_LABEL_Y
+                pct_x, pct_y = cumulative + value / 2, D.h_bar_y
+                lbl_x, lbl_y = cumulative + value / 2, D.h_label_y
                 lbl_ha, lbl_va = "center", "bottom"
 
             artists.extend(
@@ -360,11 +337,9 @@ class SummaryPlot:
                 ``ThresholdsConfig``, or if thresholds/labels/colors are
                 invalid.
         """
-        # SummaryPlot-specific: validate column exists in the DataFrame
         output_name = _validate_output_column(self._df, output)
         _validate_output_values(self._df, output_name)
 
-        # Normalise into a ThresholdsConfig
         if isinstance(thresholds, ThresholdsConfig):
             if labels is not None or colors is not None:
                 raise ValueError(
@@ -378,7 +353,6 @@ class SummaryPlot:
                 thresholds=thresholds, labels=labels, colors=colors
             )
 
-        # Shared region configuration
         self._region_config = _configure_regions(
             output=output_name,
             thresholds=config,
@@ -413,7 +387,7 @@ class SummaryPlot:
         rc = self._region_config
 
         if ax is None:
-            fig, ax = plt.subplots(figsize=(6, 3.5))
+            fig, ax = plt.subplots(figsize=_PlotDefaults.figsize)
         else:
             fig = ax.figure
 

@@ -15,19 +15,7 @@ from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
-from pythermalcomfort.plots.matplotlib._shared import BasePlotResult
-
-# ── constants ──────────────────────────────────────────────────────────────
-
-_N_POINTS: int = 200
-
-_CENTER_LINE_LABEL: str = "Comfort Temperature"
-_CENTER_LINE_DEFAULTS: dict[str, Any] = {
-    "color": "#333333",
-    "linewidth": 1.5,
-    "linestyle": "--",
-}
-
+from pythermalcomfort.plots.matplotlib._shared import BasePlotResult, _PlotDefaults
 
 # ── band configuration ────────────────────────────────────────────────────
 
@@ -346,14 +334,12 @@ class AdaptivePlot:
         all_defs: list[_BandDef] = self._cfg["bands"]
         cfg = self._bands_config
 
-        # Filter by show list
         if cfg is not None and cfg.show is not None:
             show_set = set(cfg.show)
             visible_defs = [d for d in all_defs if d.key in show_set]
         else:
             visible_defs = list(all_defs)
 
-        # Apply label/color overrides by position
         resolved: list[_ResolvedBand] = []
         for i, d in enumerate(visible_defs):
             label = d.default_label
@@ -422,7 +408,8 @@ class AdaptivePlot:
         """Render the adaptive comfort chart.
 
         Args:
-            ax: Existing axes.  If ``None``, a new figure is created.
+            ax: Existing axes.  If ``None``, a new figure is created with a
+                default size of ``(7, 4)`` inches.
             title: Optional chart title.
             xlabel: X-axis label.  ``None`` to omit.
             ylabel: Y-axis label.  ``None`` to omit.
@@ -441,16 +428,20 @@ class AdaptivePlot:
         self._validate_params()
         bands = self._resolve_bands()
 
-        t_rm = np.linspace(self._t_rm_range[0], self._t_rm_range[1], _N_POINTS)
+        t_rm = np.linspace(
+            self._t_rm_range[0],
+            self._t_rm_range[1],
+            _PlotDefaults.Adaptive.n_points,
+        )
         result = self._evaluate(t_rm)
 
         if ax is None:
-            fig, ax = plt.subplots(figsize=(8, 5))
+            fig, ax = plt.subplots(figsize=_PlotDefaults.figsize)
         else:
             fig = ax.figure
 
         fill_opts = dict(fill_kws or {})
-        fill_opts.setdefault("alpha", 0.7)
+        fill_opts.setdefault("alpha", _PlotDefaults.fill_alpha)
 
         # Draw bands (outermost first)
         fills: list[PolyCollection] = []
@@ -478,7 +469,7 @@ class AdaptivePlot:
             )
             valid = np.isfinite(center_vals)
             if valid.any():
-                cl_opts = dict(_CENTER_LINE_DEFAULTS)
+                cl_opts = dict(_PlotDefaults.Adaptive.center_line_defaults)
                 if center_line_kws:
                     cl_opts.update(center_line_kws)
                 (center_line_artist,) = ax.plot(
@@ -491,9 +482,9 @@ class AdaptivePlot:
         legend_artist: Legend | None = None
         if legend:
             lg_opts = dict(legend_kws or {})
-            lg_opts.setdefault("loc", "lower right")
-            lg_opts.setdefault("frameon", True)
-            lg_opts.setdefault("framealpha", 0.9)
+            lg_opts.setdefault("loc", _PlotDefaults.Adaptive.legend_loc)
+            lg_opts.setdefault("frameon", _PlotDefaults.Adaptive.legend_frameon)
+            lg_opts.setdefault("framealpha", _PlotDefaults.Adaptive.legend_framealpha)
 
             handles: list[Any] = []
             # Reversed so the narrowest (strictest) band appears first in the legend.
@@ -501,7 +492,7 @@ class AdaptivePlot:
                 handles.append(
                     Patch(
                         facecolor=band.color,
-                        alpha=fill_opts.get("alpha", 0.7),
+                        alpha=fill_opts.get("alpha", _PlotDefaults.fill_alpha),
                         label=band.label,
                     )
                 )
@@ -510,15 +501,20 @@ class AdaptivePlot:
                     Line2D(
                         [0],
                         [0],
-                        label=_CENTER_LINE_LABEL,
-                        **dict(_CENTER_LINE_DEFAULTS),
+                        label=_PlotDefaults.Adaptive.center_line_label,
+                        **dict(_PlotDefaults.Adaptive.center_line_defaults),
                     )
                 )
             legend_artist = ax.legend(handles=handles, **lg_opts)
 
         # Grid
         if grid:
-            ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+            ax.grid(
+                True,
+                linestyle=_PlotDefaults.Adaptive.grid_linestyle,
+                linewidth=_PlotDefaults.Adaptive.grid_linewidth,
+                alpha=_PlotDefaults.Adaptive.grid_alpha,
+            )
 
         # Labels and limits
         if xlabel is not None:

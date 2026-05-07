@@ -25,13 +25,10 @@ from pythermalcomfort.plots.matplotlib._shared import (
     _extract_output_by_name,
     _inspect_model_signature,
     _parse_axis_range,
+    _PlotDefaults,
     _validate_model_kwargs,
     _validate_resolution,
 )
-
-OUT_OF_MODEL_LIMITS_COLOR = "#bdbdbd"
-
-_DEFAULT_PARAMETER_LINKS: dict[str, str] = {"tr": "tdb", "tdb": "tr"}
 
 
 @dataclass
@@ -125,7 +122,7 @@ class ThresholdPlot:
         self._y_axis: _AxisConfig | None = None
         self._fixed_values: dict[str, Any] = {}
         self._region_config: RegionConfig | None = None
-        self._default_links = _DEFAULT_PARAMETER_LINKS
+        self._default_links = _PlotDefaults.parameter_links
         (
             _,
             self._allowed_args,
@@ -456,7 +453,7 @@ class ThresholdPlot:
         line_kws: Mapping[str, Any] | None = None,
         fill_kws: Mapping[str, Any] | None = None,
         legend_kws: Mapping[str, Any] | None = None,
-        invalid_color: str = OUT_OF_MODEL_LIMITS_COLOR,
+        invalid_color: str = _PlotDefaults.color_out_of_model,
     ) -> ThresholdPlotResult:
         """Render threshold regions and contours on a Matplotlib axis.
 
@@ -484,19 +481,21 @@ class ThresholdPlot:
         rc = self._region_config
 
         line_opts = dict(line_kws or {})
-        line_opts.setdefault("color", "black")
-        line_opts.setdefault("linewidth", 1.0)
+        line_opts.setdefault("color", _PlotDefaults.Threshold.line_color)
+        line_opts.setdefault("linewidth", _PlotDefaults.Threshold.line_linewidth)
 
         fill_opts = dict(fill_kws or {})
-        fill_opts.setdefault("corner_mask", False)
+        fill_opts.setdefault("corner_mask", _PlotDefaults.Threshold.fill_corner_mask)
 
         legend_opts = dict(legend_kws or {})
-        legend_opts.setdefault("loc", "lower center")
-        legend_opts.setdefault("bbox_to_anchor", (0.5, 1.02))
-        legend_opts.setdefault("frameon", False)
+        legend_opts.setdefault("loc", _PlotDefaults.Threshold.legend_loc)
+        legend_opts.setdefault(
+            "bbox_to_anchor", _PlotDefaults.Threshold.legend_bbox_to_anchor
+        )
+        legend_opts.setdefault("frameon", _PlotDefaults.Threshold.legend_frameon)
 
         if ax is None:
-            fig, ax = plt.subplots(figsize=(7, 4))
+            fig, ax = plt.subplots(figsize=_PlotDefaults.figsize)
         else:
             fig = ax.figure
 
@@ -544,7 +543,7 @@ class ThresholdPlot:
                 invalid_mask,
                 cmap=ListedColormap([invalid_color]),
                 shading="flat",
-                zorder=1.5,
+                zorder=_PlotDefaults.Threshold.zorder_invalid,
             )
 
         lines: list[Line2D] = []
@@ -563,7 +562,7 @@ class ThresholdPlot:
             handles = [
                 Patch(
                     facecolor=color,
-                    alpha=fill_opts.get("alpha", 1.0),
+                    alpha=fill_opts.get("alpha", _PlotDefaults.fill_alpha),
                     label=label,
                 )
                 for label, color in zip(rc.labels, rc.colors, strict=False)
@@ -576,7 +575,9 @@ class ThresholdPlot:
                         label="Out of model limits",
                     )
                 )
-            legend_opts.setdefault("ncol", min(len(handles), 4))
+            legend_opts.setdefault(
+                "ncol", min(len(handles), _PlotDefaults.Threshold.legend_ncol_max)
+            )
             legend_artist = ax.legend(
                 handles=handles,
                 **legend_opts,

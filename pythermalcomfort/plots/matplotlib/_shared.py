@@ -52,6 +52,94 @@ def _validate_resolution(resolution: Any) -> float:
     return resolution_float
 
 
+# ── visual defaults ────────────────────────────────────────────────────────
+
+
+class _PlotDefaults:
+    """Central registry of visual defaults shared across all Matplotlib plot types.
+
+    Top-level attributes are shared across all plot types for a consistent
+    look and feel.  Nested classes group plot-specific defaults by type.
+
+    Usage::
+
+        from pythermalcomfort.plots.matplotlib._shared import _PlotDefaults
+
+        color = _PlotDefaults.color_out_of_model
+        size = _PlotDefaults.figsize
+        alpha = _PlotDefaults.fill_alpha
+        fsize = _PlotDefaults.title_fontsize
+    """
+
+    # ── shared across all plot types ───────────────────────────────────────
+    color_out_of_model: str = "#bdbdbd"
+    parameter_links: dict = {"tr": "tdb", "tdb": "tr"}
+    figsize: tuple = (7, 4)
+    fill_alpha: float = 1.0
+    title_fontsize: int = 13
+
+    class Threshold:
+        """Defaults specific to :class:`ThresholdPlot`."""
+
+        fill_corner_mask: bool = False
+        line_color: str = "black"
+        line_linewidth: float = 1.0
+        legend_loc: str = "lower center"
+        legend_bbox_to_anchor: tuple = (0.5, 1.02)
+        legend_frameon: bool = False
+        legend_ncol_max: int = 4
+        zorder_invalid: float = 1.5
+
+    class Adaptive:
+        """Defaults specific to :class:`AdaptivePlot`."""
+
+        n_points: int = 200
+        center_line_label: str = "Comfort Temperature"
+        center_line_defaults: dict = {
+            "color": "#333333",
+            "linewidth": 1.5,
+            "linestyle": "--",
+        }
+        legend_loc: str = "lower right"
+        legend_frameon: bool = True
+        legend_framealpha: float = 0.9
+        grid_linestyle: str = "--"
+        grid_linewidth: float = 0.5
+        grid_alpha: float = 0.7
+
+    class Psychrometric:
+        """Defaults specific to :class:`PsychrometricPlot`."""
+
+        p_atm: float = 101325.0
+        n_tdb_points: int = 500
+        rh_line_color: str = "#a0a0a0"
+        rh_line_linewidth: float = 0.8
+        rh_label_fontsize: int = 8
+        rh_label_offset_fraction: float = 0.01
+        rh_curve_step: int = 10
+        zorder_rh_mask: float = 1.6
+        zorder_rh_lines: float = 2.0
+
+    class Summary:
+        """Defaults specific to :class:`SummaryPlot`."""
+
+        title_pad: int = 10
+        bar_edgecolor: str = "white"
+        bar_linewidth: float = 1.0
+        percentage_fontsize: int = 12
+        label_fontsize: int = 11
+        h_xlim: tuple = (0.0, 100.0)
+        h_ylim: tuple = (-0.6, 0.6)
+        h_bar_y: float = 0.0
+        h_bar_height: float = 0.36
+        h_label_y: float = 0.34
+        v_xlim: tuple = (-0.75, 0.9)
+        v_ylim: tuple = (0.0, 100.0)
+        v_bar_x: float = 0.0
+        v_bar_width: float = 0.42
+        v_label_x_offset: float = 0.38
+
+
 # ── public configuration ───────────────────────────────────────────────────
 
 
