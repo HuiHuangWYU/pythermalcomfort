@@ -177,18 +177,20 @@ def _lu_heat_index_vectorized(tdb, rh):  # Thermodynamic parameters
         m = (p_cr - pa) / (zs(rs) + za)
         m_bar = (p_cr - pa) / (zs(rs) + za_bar)
         ts = solve(
-            lambda ts: (ts - ta) / ra(ts, ta)
-            + (p_cr - pa) / (zs(rs) + za)
-            - (t_cr - ts) / rs,
+            lambda ts: (
+                (ts - ta) / ra(ts, ta) + (p_cr - pa) / (zs(rs) + za) - (t_cr - ts) / rs
+            ),
             max(0.0, min(t_cr, ta) - rs * abs(m)),
             max(t_cr, ta) + rs * abs(m),
             tol,
             max_iter,
         )
         tf = solve(
-            lambda tf: (tf - ta) / ra_bar(tf, ta)
-            + (p_cr - pa) / (zs(rs) + za_bar)
-            - (t_cr - tf) / rs,
+            lambda tf: (
+                (tf - ta) / ra_bar(tf, ta)
+                + (p_cr - pa) / (zs(rs) + za_bar)
+                - (t_cr - tf) / rs
+            ),
             max(0.0, min(t_cr, ta) - rs * abs(m_bar)),
             max(t_cr, ta) + rs * abs(m_bar),
             tol,
@@ -210,11 +212,16 @@ def _lu_heat_index_vectorized(tdb, rh):  # Thermodynamic parameters
                 t_cr - (q - qv(ta, pa)) * rs / phi + (1.0 / phi - 1.0) * (t_cr - ts)
             )
             tf = solve(
-                lambda tf: (tf - ta) / ra_bar(tf, ta)
-                + (p_cr - pa)
-                * (tf - ta)
-                / ((zs(rs) + za_bar) * (tf - ta) + r * ra_bar(tf, ta) * (ts_bar - tf))
-                - (t_cr - ts_bar) / rs,
+                lambda tf: (
+                    (tf - ta) / ra_bar(tf, ta)
+                    + (p_cr - pa)
+                    * (tf - ta)
+                    / (
+                        (zs(rs) + za_bar) * (tf - ta)
+                        + r * ra_bar(tf, ta) * (ts_bar - tf)
+                    )
+                    - (t_cr - ts_bar) / rs
+                ),
                 ta,
                 ts_bar,
                 tol,
@@ -231,9 +238,11 @@ def _lu_heat_index_vectorized(tdb, rh):  # Thermodynamic parameters
             )
             if flux3 < 0.0:  # region IV,V
                 ts = solve(
-                    lambda ts: (ts - ta) / ra_un(ts, ta)
-                    + (p_cr - pa) / (zs((t_cr - ts) / (q - qv(ta, pa))) + za_un)
-                    - (q - qv(ta, pa)),
+                    lambda ts: (
+                        (ts - ta) / ra_un(ts, ta)
+                        + (p_cr - pa) / (zs((t_cr - ts) / (q - qv(ta, pa))) + za_un)
+                        - (q - qv(ta, pa))
+                    ),
                     0.0,
                     t_cr,
                     tol,
@@ -244,9 +253,11 @@ def _lu_heat_index_vectorized(tdb, rh):  # Thermodynamic parameters
                 ps = p_cr - (p_cr - pa) * zs(rs) / (zs(rs) + za_un)
                 if ps > phi_salt * pv_star(ts):  # region V
                     ts = solve(
-                        lambda ts: (ts - ta) / ra_un(ts, ta)
-                        + (phi_salt * pv_star(ts) - pa) / za_un
-                        - (q - qv(ta, pa)),
+                        lambda ts: (
+                            (ts - ta) / ra_un(ts, ta)
+                            + (phi_salt * pv_star(ts) - pa) / za_un
+                            - (q - qv(ta, pa))
+                        ),
                         0.0,
                         t_cr,
                         tol,

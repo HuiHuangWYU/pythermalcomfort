@@ -22,7 +22,7 @@ Contributing
 .. toctree::
    :maxdepth: 2
 
-   contributing
+   contributing/index
    authors
 
 

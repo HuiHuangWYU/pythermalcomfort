@@ -9,9 +9,13 @@ from pythermalcomfort.utilities import (
     Models,
     Units,
     _check_standard_compliance_array,
+    adaptive_cooling_effect,
     operative_tmp,
     units_converter,
 )
+
+SLOPE: float = 0.31
+INTERCEPT: float = 17.8
 
 
 def adaptive_ashrae(
@@ -124,14 +128,9 @@ def adaptive_ashrae(
 
     to = operative_tmp(tdb, tr, v, standard=standard)
 
-    # Calculate cooling effect (ce) of elevated air speed when top > 25 degC.
-    ce = np.where((v >= 0.6) & (to >= 25.0), 999, 0)
-    ce = np.where((v < 0.9) & (ce == 999), 1.2, ce)
-    ce = np.where((v < 1.2) & (ce == 999), 1.8, ce)
-    ce = np.where(ce == 999, 2.2, ce)
+    ce = adaptive_cooling_effect(v, to)
 
-    # Relation between comfort and outdoor temperature
-    t_cmf = 0.31 * t_running_mean + 17.8
+    t_cmf = SLOPE * t_running_mean + INTERCEPT
 
     if limit_inputs:
         all_valid = ~(

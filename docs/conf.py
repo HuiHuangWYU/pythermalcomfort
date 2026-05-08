@@ -29,6 +29,14 @@ project_copyright = f"{year}, {author}"
 version = release = "3.6.1"
 
 autodoc_typehints = "none"
+
+# External URLs we cannot fix.
+linkcheck_ignore = [
+    # LinkedIn blocks automated requests (always 404 from bots).
+    r"https://www\.linkedin\.com/.*",
+    # Snyk badge URL has moved; the target URL no longer resolves to a badge.
+    r"https://snyk\.io/advisor/python/pythermalcomfort/badge\.svg",
+]
 pygments_style = "trac"
 templates_path = ["."]
 extlinks = {
