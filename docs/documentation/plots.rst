@@ -43,13 +43,14 @@ The full list of functions is available in the "Plotting Functions Reference" se
 
     plots/matplotlib/threshold_plot.ipynb
     plots/matplotlib/summary_plot.ipynb
+    plots/matplotlib/psychrometric_plot.ipynb
+    plots/matplotlib/adaptive_plot.ipynb
 
-Examples Clear and Effective Visualizations
--------------------------------------------
+Practical Recipes
+-----------------
 
-In addition to the plotting API notebooks, this section includes practical plotting
-recipes that combine `pythermalcomfort` with standard Matplotlib workflows for
-time series, distributions, and overlays.
+These examples combine different chart types with standard Matplotlib workflows
+to produce time series, overlays, and multi-panel figures.
 
 .. toctree::
 
