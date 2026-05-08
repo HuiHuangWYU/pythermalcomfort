@@ -22,17 +22,7 @@ from pythermalcomfort.plots.matplotlib.threshold import (
     ThresholdPlot,
     ThresholdPlotResult,
 )
-from pythermalcomfort.utilities import p_sat, psy_ta_rh
-
-
-def _hr_to_rh(hr: np.ndarray, tdb: np.ndarray, p_atm: float) -> np.ndarray:
-    """Convert humidity ratio [kg/kg] to relative humidity [%].
-
-    Inverse of the standard humidity-ratio formula:
-    ``hr = 0.62198 * p_vap / (p_atm - p_vap)``
-    """
-    p_vap = hr * p_atm / (0.62198 + hr)
-    return p_vap / p_sat(tdb) * 100.0
+from pythermalcomfort.utilities import hr_to_rh, psy_ta_rh
 
 
 class PsychrometricPlot(ThresholdPlot):
@@ -195,7 +185,7 @@ class PsychrometricPlot(ThresholdPlot):
             tdb_for_psat = x_flat
 
         p_atm = _PlotDefaults.Psychrometric.p_atm
-        rh_flat = _hr_to_rh(y_flat, tdb_for_psat, p_atm)
+        rh_flat = hr_to_rh(y_flat, tdb_for_psat, p_atm)
 
         # Clamp RH to [0, 100] — super-saturated cells are evaluated at rh=100%
         # rather than being excluded.  This keeps the contourf gap-free; the
