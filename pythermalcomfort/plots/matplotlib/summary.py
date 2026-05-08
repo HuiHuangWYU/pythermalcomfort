@@ -18,7 +18,6 @@ from pythermalcomfort.plots.matplotlib._base import BasePlot
 from pythermalcomfort.plots.matplotlib._shared import (
     _PYTHERMALCOMFORT_RC,
     BasePlotResult,
-    ThresholdsConfig,
     _is_light_color,
     _PlotDefaults,
 )
@@ -282,23 +281,18 @@ class SummaryPlot(BasePlot):
         self,
         *,
         output: str,
-        thresholds: ThresholdsConfig | Sequence[float],
+        thresholds: Sequence[float],
         labels: Sequence[str] | None = None,
         colors: Sequence[str] | None = None,
     ) -> SummaryPlot:
         """Set output variable and threshold region configuration.
 
-        Accepts either a pre-built :class:`ThresholdsConfig` or raw threshold
-        values (with optional *labels* and *colors*).
-
         Parameters
         ----------
         output : str
             Name of the DataFrame column to categorize.
-        thresholds : ThresholdsConfig or sequence of float
-            A :class:`ThresholdsConfig` instance **or** a sequence of numeric
-            boundary values.  When a ``ThresholdsConfig`` is supplied, *labels*
-            and *colors* must not be given separately.
+        thresholds : sequence of float
+            Numeric boundary values that divide the output range into regions.
         labels : sequence of str, optional
             Region labels.  Must have length ``len(thresholds) + 1`` when
             provided.
@@ -316,9 +310,8 @@ class SummaryPlot(BasePlot):
         TypeError
             If ``output`` is not a string.
         ValueError
-            If the output column is missing or has invalid values, if *labels*
-            or *colors* are supplied together with a ``ThresholdsConfig``, or
-            if thresholds/labels/colors are invalid.
+            If the output column is missing or has invalid values, or if
+            thresholds/labels/colors are invalid.
         """
         output_name = _validate_output_column(self._df, output)
         _validate_output_values(self._df, output_name)

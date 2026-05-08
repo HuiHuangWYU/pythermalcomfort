@@ -207,7 +207,7 @@ def pmv_ppd_iso(
 ### When adding new plots
 
 1. Use the fluent API pattern from `plots/matplotlib/`: setters return `self`, final `plot()` returns figure/axis
-2. Store configuration in dataclass (see `ThresholdsConfig`)
+2. Pass `thresholds`, `labels`, and `colors` directly to `set_regions` (no wrapper dataclass needed)
 3. Return Matplotlib handles (`ax`, lines, patches) for user customization
 4. Document via docstrings and examples in `plots/README.md`
 

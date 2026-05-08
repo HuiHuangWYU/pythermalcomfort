@@ -50,8 +50,8 @@ Required methods (all plot types)
     Configure which regions to display and how to label/colour them.
     Must return ``self`` to support method chaining.
 
-    * **Grid and summary plots**: accept a ``ThresholdsConfig`` or raw
-      sequence of numeric boundary values.
+    * **Grid and summary plots**: accept a sequence of numeric boundary values
+      plus optional *labels* and *colors*.
     * **Line (adaptive) plots**: accept a ``RegionsConfig`` that selects
       named comfort bands by key.
 
@@ -105,8 +105,9 @@ Naming conventions
      - Always ``set_x_axis`` / ``set_y_axis``; never ``configure_axis``
        or ``set_range``.
    * - Configuration dataclasses
-     - ``ThresholdsConfig`` for numeric thresholds (shared across grid/summary
-       plots); ``RegionsConfig`` for named comfort bands (adaptive plots).
+     - ``RegionsConfig`` for named comfort bands (adaptive plots).
+       Grid/summary plots use plain ``thresholds``, ``labels``, and ``colors``
+       parameters passed directly to ``set_regions``.
    * - Result dataclasses
      - ``<ClassName>Result`` (e.g. ``ThresholdPlotResult``); inherit from
        ``BasePlotResult``.
@@ -245,7 +246,6 @@ Skeleton
 
     from pythermalcomfort.plots.matplotlib._shared import (
         BasePlotResult,
-        ThresholdsConfig,
         _PlotDefaults,
         _configure_regions,
     )
@@ -282,7 +282,7 @@ Skeleton
             self,
             *,
             output: str,
-            thresholds: ThresholdsConfig | list[float],
+            thresholds: list[float],
             labels: list[str] | None = None,
             colors: list[str] | None = None,
         ) -> MyPlot:
@@ -293,11 +293,9 @@ Skeleton
             MyPlot
                 Self, to support method chaining.
             """
-            if not isinstance(thresholds, ThresholdsConfig):
-                thresholds = ThresholdsConfig(
-                    thresholds=thresholds, labels=labels, colors=colors
-                )
-            self._region_config = _configure_regions(output=output, thresholds=thresholds)
+            self._region_config = _configure_regions(
+                output=output, thresholds=thresholds, labels=labels, colors=colors
+            )
             return self
 
         def plot(
@@ -348,4 +346,4 @@ Reference implementations
 * ``pythermalcomfort/plots/matplotlib/adaptive.py`` — canonical line plot;
   shows how constants are imported from model modules.
 * ``pythermalcomfort/plots/matplotlib/_shared.py`` — ``_PlotDefaults``,
-  ``ThresholdsConfig``, ``_configure_regions``, ``BasePlotResult``.
+  ``_configure_regions``, ``BasePlotResult``.

@@ -5,7 +5,6 @@
 The API is intentionally compact:
 - `ThresholdPlot`: build threshold-region charts by configuring model, axes, fixed parameters, and regions.
 - `SummaryPlot`: build compact horizontal/vertical summaries from DataFrame outputs.
-- `ThresholdsConfig`: shared region configuration dataclass.
 
 Both APIs return Matplotlib handles so users can customize visuals with standard Matplotlib code.
 

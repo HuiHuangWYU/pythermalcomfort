@@ -1,4 +1,3 @@
-from pythermalcomfort.plots.matplotlib._shared import ThresholdsConfig
 from pythermalcomfort.plots.matplotlib.adaptive import (
     AdaptivePlot,
     AdaptivePlotResult,
@@ -12,7 +11,6 @@ from pythermalcomfort.plots.matplotlib.threshold import (
 )
 
 __all__ = [
-    "ThresholdsConfig",
     "ThresholdPlot",
     "ThresholdPlotResult",
     "SummaryPlot",

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from numbers import Number
 from typing import Any
 
@@ -153,73 +153,6 @@ _PYTHERMALCOMFORT_RC: dict[str, Any] = {
     "grid.linewidth": 0.5,
     "grid.alpha": 0.7,
 }
-
-# ── public configuration ───────────────────────────────────────────────────
-
-
-@dataclass
-class ThresholdsConfig:
-    """Reusable threshold-region configuration.
-
-    Users create a ``ThresholdsConfig`` once, then pass it to both
-    :meth:`ThresholdPlot.set_regions` and :meth:`SummaryPlot.set_regions`
-    to guarantee consistent region definitions.
-
-    Attributes
-    ----------
-    thresholds : sequence of float
-        One or more boundary values that divide the output range into regions.
-        Values are sorted and validated on creation.
-    labels : sequence of str or None
-        Optional human-readable label for every region.  Must have length
-        ``len(thresholds) + 1`` when provided.
-    colors : sequence of str or None
-        Optional Matplotlib-compatible color for every region.  Must have
-        length ``len(thresholds) + 1`` when provided.
-
-    Examples
-    --------
-    .. code-block:: python
-
-        pmv_config = ThresholdsConfig(
-            thresholds=[-0.5, 0.5],
-            labels=["Cool", "Comfortable", "Warm"],
-            colors=["#A3D1FF", "#A8E6CF", "#FFB7B2"],
-        )
-    """
-
-    thresholds: Sequence[float]
-    labels: Sequence[str] | None = None
-    colors: Sequence[str] | None = None
-
-    # Resolved after __post_init__
-    _normalized_thresholds: list[float] = field(init=False, repr=False, compare=False)
-
-    def __post_init__(self) -> None:
-        """Validate and normalise thresholds, labels, and colors."""
-        self._normalized_thresholds = _normalize_levels(self.thresholds)
-        n_regions = len(self._normalized_thresholds) + 1
-
-        if self.labels is not None:
-            if len(self.labels) == 0:
-                # Empty sequence → suppress all label text (show no region names).
-                self.labels = [""] * n_regions
-            elif len(self.labels) != n_regions:
-                msg = f"labels must have length {n_regions} (got {len(self.labels)})."
-                raise ValueError(msg)
-            else:
-                self.labels = [str(label) for label in self.labels]
-
-        if self.colors is not None:
-            if len(self.colors) != n_regions:
-                msg = f"colors must have length {n_regions} (got {len(self.colors)})."
-                raise ValueError(msg)
-            invalid = [c for c in self.colors if not mcolors.is_color_like(c)]
-            if invalid:
-                msg = f"Invalid color value(s): {', '.join(str(c) for c in invalid)}."
-                raise ValueError(msg)
-            self.colors = [str(c) for c in self.colors]
-
 
 # ── internal resolved container ────────────────────────────────────────────
 
@@ -472,7 +405,9 @@ def _resolve_region_colors(
 def _configure_regions(
     *,
     output: str,
-    thresholds: ThresholdsConfig,
+    thresholds: Sequence[float],
+    labels: Sequence[str] | None = None,
+    colors: Sequence[str] | None = None,
 ) -> RegionConfig:
     """Validate inputs and build a :class:`RegionConfig`.
 
@@ -483,9 +418,14 @@ def _configure_regions(
     ----------
     output : str
         Output column / field name.
-    thresholds : ThresholdsConfig
-        A :class:`ThresholdsConfig` carrying boundary values and optional
-        labels / colors.
+    thresholds : sequence of float
+        Boundary values that divide the output range into regions.
+    labels : sequence of str, optional
+        Human-readable label for every region.  Must have length
+        ``len(thresholds) + 1`` when provided.
+    colors : sequence of str, optional
+        Matplotlib-compatible color for every region.  Must have length
+        ``len(thresholds) + 1`` when provided.
 
     Returns
     -------
@@ -505,15 +445,15 @@ def _configure_regions(
     if not output_name:
         raise ValueError("output must be a non-empty string.")
 
-    normalized_levels = thresholds._normalized_thresholds
+    normalized_levels = _normalize_levels(thresholds)
     region_labels = _build_region_labels(
         output=output_name,
         levels=normalized_levels,
-        labels=thresholds.labels,
+        labels=labels,
     )
     region_colors = _resolve_region_colors(
         n_regions=len(normalized_levels) + 1,
-        colors=thresholds.colors,
+        colors=colors,
     )
 
     return RegionConfig(

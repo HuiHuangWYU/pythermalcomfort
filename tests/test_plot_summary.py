@@ -11,7 +11,6 @@ from matplotlib.legend import Legend
 from pythermalcomfort.plots.matplotlib.summary import (
     SummaryPlot,
     SummaryPlotResult,
-    ThresholdsConfig,
 )
 
 
@@ -150,13 +149,17 @@ def test_set_regions_rejects_non_finite_output_values() -> None:
         SummaryPlot(df).set_regions(output="pmv", thresholds=[-0.5, 0.5])
 
 
-def test_summary_with_thresholds_config() -> None:
-    config = ThresholdsConfig(
-        thresholds=[-0.5, 0.5],
-        labels=["Cool", "Comfortable", "Warm"],
-    )
+def test_summary_with_custom_labels() -> None:
     df = pd.DataFrame({"pmv": [0.7, -0.3, 0.1, -0.8, 1.2]})
-    result = SummaryPlot(df).set_regions(output="pmv", thresholds=config).plot()
+    result = (
+        SummaryPlot(df)
+        .set_regions(
+            output="pmv",
+            thresholds=[-0.5, 0.5],
+            labels=["Cool", "Comfortable", "Warm"],
+        )
+        .plot()
+    )
     assert isinstance(result, SummaryPlotResult)
     assert list(result.percentages.index) == ["Cool", "Comfortable", "Warm"]
 
@@ -197,11 +200,14 @@ def test_set_regions_empty_labels_suppresses_label_text(pmv_df: pd.DataFrame) ->
     assert legend_texts == ["", "", ""]
 
 
-def test_thresholds_config_empty_labels_suppresses_label_text(
+def test_empty_labels_suppresses_label_text_via_thresholds(
     pmv_df: pd.DataFrame,
 ) -> None:
-    config = ThresholdsConfig(thresholds=[-0.5, 0.5], labels=[])
-    result = SummaryPlot(pmv_df).set_regions(output="pmv", thresholds=config).plot()
+    result = (
+        SummaryPlot(pmv_df)
+        .set_regions(output="pmv", thresholds=[-0.5, 0.5], labels=[])
+        .plot()
+    )
 
     legend_texts = [t.get_text() for t in result.legend.get_texts()]
     assert legend_texts == ["", "", ""]

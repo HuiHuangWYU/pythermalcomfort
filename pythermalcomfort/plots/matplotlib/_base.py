@@ -12,7 +12,6 @@ from matplotlib.axes import Axes
 from pythermalcomfort.plots.matplotlib._shared import (
     BasePlotResult,
     RegionConfig,
-    ThresholdsConfig,
     _apply_default_links_to_kwargs,
     _AxisConfig,
     _configure_regions,
@@ -44,23 +43,18 @@ class BasePlot(ABC):
         self,
         *,
         output: str,
-        thresholds: ThresholdsConfig | Sequence[float],
+        thresholds: Sequence[float],
         labels: Sequence[str] | None = None,
         colors: Sequence[str] | None = None,
     ) -> BasePlot:
         """Configure output regions.
 
-        Accepts either a pre-built :class:`ThresholdsConfig` or raw threshold
-        values (with optional *labels* and *colors*).
-
         Parameters
         ----------
         output : str
             Output field or column name.
-        thresholds : ThresholdsConfig or sequence of float
-            A :class:`ThresholdsConfig` instance **or** a sequence of numeric
-            boundary values.  When a ``ThresholdsConfig`` is supplied, *labels*
-            and *colors* must not be given separately.
+        thresholds : sequence of float
+            Numeric boundary values that divide the output range into regions.
         labels : sequence of str, optional
             Region labels.  Must have length ``len(thresholds) + 1`` when
             provided.
@@ -78,24 +72,11 @@ class BasePlot(ABC):
         TypeError
             If ``output`` is not a string.
         ValueError
-            If output name is empty, if *labels* or *colors* are supplied
-            together with a ``ThresholdsConfig``, or if thresholds/labels/colors
-            are invalid.
+            If output name is empty, or thresholds/labels/colors are invalid.
         """
-        if isinstance(thresholds, ThresholdsConfig):
-            if labels is not None or colors is not None:
-                raise ValueError(
-                    "labels and colors must not be provided separately when "
-                    "thresholds is a ThresholdsConfig instance.  Set them "
-                    "inside the ThresholdsConfig instead."
-                )
-            config = thresholds
-        else:
-            config = ThresholdsConfig(
-                thresholds=thresholds, labels=labels, colors=colors
-            )
-
-        self._region_config = _configure_regions(output=output, thresholds=config)
+        self._region_config = _configure_regions(
+            output=output, thresholds=thresholds, labels=labels, colors=colors
+        )
         return self
 
     @abstractmethod
