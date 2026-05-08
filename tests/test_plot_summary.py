@@ -184,3 +184,24 @@ def test_plot_result_has_no_data_attribute(pmv_df: pd.DataFrame) -> None:
     result = _new_summary(pmv_df).plot()
 
     assert not hasattr(result, "data")
+
+
+def test_set_regions_empty_labels_suppresses_label_text(pmv_df: pd.DataFrame) -> None:
+    result = (
+        SummaryPlot(pmv_df)
+        .set_regions(output="pmv", thresholds=[-0.5, 0.5], labels=[])
+        .plot()
+    )
+
+    legend_texts = [t.get_text() for t in result.legend.get_texts()]
+    assert legend_texts == ["", "", ""]
+
+
+def test_thresholds_config_empty_labels_suppresses_label_text(
+    pmv_df: pd.DataFrame,
+) -> None:
+    config = ThresholdsConfig(thresholds=[-0.5, 0.5], labels=[])
+    result = SummaryPlot(pmv_df).set_regions(output="pmv", thresholds=config).plot()
+
+    legend_texts = [t.get_text() for t in result.legend.get_texts()]
+    assert legend_texts == ["", "", ""]

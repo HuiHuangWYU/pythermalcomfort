@@ -103,16 +103,25 @@ def _compute_region_percentages(
     levels: Sequence[float],
     region_labels: Sequence[str],
 ) -> pd.Series:
-    """Assign each row to a threshold region and return percentage per region."""
+    """Assign each row to a threshold region and return percentage per region.
+
+    Uses integer indices internally for pd.cut so that duplicate or empty
+    display labels (e.g. ``["", "", ""]``) are handled correctly.  The
+    returned Series carries the display labels as its index.
+    """
     bins = [-np.inf, *levels, np.inf]
     values = pd.to_numeric(df[output_column], errors="raise")
-    categorized = pd.cut(values, bins=bins, labels=region_labels, right=False)
-    return (
+    n_regions = len(levels) + 1
+    int_labels = list(range(n_regions))
+    categorized = pd.cut(values, bins=bins, labels=int_labels, right=False)
+    result = (
         categorized.value_counts(normalize=True)
-        .reindex(region_labels, fill_value=0.0)
+        .reindex(int_labels, fill_value=0.0)
         .mul(100)
         .round(1)
     )
+    result.index = pd.Index(region_labels)
+    return result
 
 
 # ── axis preparation ───────────────────────────────────────────────────────
@@ -172,12 +181,12 @@ def _plot_summary(
         ax.set_ylim(*D.v_ylim)
     else:
         ax.set_xlim(*D.h_xlim)
-        ax.set_ylim(*D.h_ylim)
+        ax.set_ylim(*(D.h_ylim if show_region_labels else D.h_ylim_legend))
 
     cumulative = 0.0
 
-    for label, color in zip(region_labels, region_colors, strict=False):
-        value = float(region_percentages[label])
+    for i, (label, color) in enumerate(zip(region_labels, region_colors, strict=False)):
+        value = float(region_percentages.iloc[i])
 
         if vertical:
             bar = ax.bar(

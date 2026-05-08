@@ -131,6 +131,7 @@ class _PlotDefaults:
         pct_min_to_show: float = 5.0
         h_xlim: tuple = (0.0, 100.0)
         h_ylim: tuple = (-0.6, 0.6)
+        h_ylim_legend: tuple = (-1, 0.3)  # tighter top when legend handles labels
         h_bar_y: float = 0.0
         h_bar_height: float = 0.36
         h_label_y: float = 0.34
@@ -200,10 +201,14 @@ class ThresholdsConfig:
         n_regions = len(self._normalized_thresholds) + 1
 
         if self.labels is not None:
-            if len(self.labels) != n_regions:
+            if len(self.labels) == 0:
+                # Empty sequence → suppress all label text (show no region names).
+                self.labels = [""] * n_regions
+            elif len(self.labels) != n_regions:
                 msg = f"labels must have length {n_regions} (got {len(self.labels)})."
                 raise ValueError(msg)
-            self.labels = [str(label) for label in self.labels]
+            else:
+                self.labels = [str(label) for label in self.labels]
 
         if self.colors is not None:
             if len(self.colors) != n_regions:
@@ -396,6 +401,8 @@ def _build_region_labels(
 
     n_regions = len(levels) + 1
     if labels is not None:
+        if len(labels) == 0:
+            return [""] * n_regions
         if len(labels) != n_regions:
             msg = f"labels must have length {n_regions} (got {len(labels)})."
             raise ValueError(msg)
