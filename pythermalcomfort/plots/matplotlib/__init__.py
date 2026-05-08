@@ -2,7 +2,7 @@ from pythermalcomfort.plots.matplotlib._shared import ThresholdsConfig
 from pythermalcomfort.plots.matplotlib.adaptive import (
     AdaptivePlot,
     AdaptivePlotResult,
-    BandsConfig,
+    RegionsConfig,
 )
 from pythermalcomfort.plots.matplotlib.psychrometric import PsychrometricPlot
 from pythermalcomfort.plots.matplotlib.summary import SummaryPlot, SummaryPlotResult
@@ -20,5 +20,5 @@ __all__ = [
     "PsychrometricPlot",
     "AdaptivePlot",
     "AdaptivePlotResult",
-    "BandsConfig",
+    "RegionsConfig",
 ]

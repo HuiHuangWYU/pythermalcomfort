@@ -25,6 +25,7 @@ from pythermalcomfort.models.adaptive_ashrae import INTERCEPT as _ASHRAE_INTERCE
 from pythermalcomfort.models.adaptive_ashrae import SLOPE as _ASHRAE_SLOPE
 from pythermalcomfort.models.adaptive_en import INTERCEPT as _EN_INTERCEPT
 from pythermalcomfort.models.adaptive_en import SLOPE as _EN_SLOPE
+from pythermalcomfort.plots.matplotlib._base import BasePlot
 from pythermalcomfort.plots.matplotlib._shared import BasePlotResult, _PlotDefaults
 from pythermalcomfort.utilities import adaptive_cooling_effect
 
@@ -78,10 +79,12 @@ _BAND_KEYS: dict[str, list[str]] = {
 
 
 @dataclass
-class BandsConfig:
-    """Reusable comfort band configuration.
+class RegionsConfig:
+    """Reusable comfort band configuration for adaptive charts.
 
-    Controls which bands are displayed and their appearance.
+    Controls which bands are displayed and their appearance.  Create a
+    ``RegionsConfig`` once and pass it to :meth:`AdaptivePlot.set_regions`
+    to guarantee consistent band definitions across multiple plots.
 
     Attributes
     ----------
@@ -103,7 +106,7 @@ class BandsConfig:
     --------
     .. code-block:: python
 
-        config = BandsConfig(
+        config = RegionsConfig(
             show=["90"],
             labels=["90% Comfort Zone"],
             colors=["#FF6B6B"],
@@ -186,7 +189,7 @@ class AdaptivePlotResult(BasePlotResult):
 # ── main class ─────────────────────────────────────────────────────────────
 
 
-class AdaptivePlot:
+class AdaptivePlot(BasePlot):
     """Adaptive comfort chart for ASHRAE 55 or EN 16798.
 
     The chart displays comfort bands as filled regions on a plot of
@@ -219,12 +222,7 @@ class AdaptivePlot:
         )
     """
 
-    def __init__(
-        self,
-        model_func: Any,
-        *,
-        t_running_mean_range: tuple[float, float] | None = None,
-    ) -> None:
+    def __init__(self, model_func: Any) -> None:
         """Initialize an adaptive comfort chart builder.
 
         Parameters
@@ -232,16 +230,13 @@ class AdaptivePlot:
         model_func : callable
             The adaptive comfort model function.  Must be ``adaptive_ashrae``
             or ``adaptive_en`` from :mod:`pythermalcomfort.models`.
-        t_running_mean_range : tuple of float, optional
-            Optional ``(min, max)`` override for the x-axis range.  Defaults
-            to the standard's applicability range (10--33.5 °C).
 
         Raises
         ------
         ValueError
-            If *model_func* is not a recognized adaptive model, or if
-            *t_running_mean_range* has ``min >= max``.
+            If *model_func* is not a recognized adaptive model function.
         """
+        super().__init__()
         name = getattr(model_func, "__name__", "")
         if name not in _MODEL_TO_STANDARD:
             valid = ", ".join(sorted(_MODEL_TO_STANDARD))
@@ -254,15 +249,69 @@ class AdaptivePlot:
         self._standard = _MODEL_TO_STANDARD[name]
         self._cfg = _STANDARD_CONFIGS[self._standard]
         self._v: float = 0.1
-        self._bands_config: BandsConfig | None = None
+        self._regions_config: RegionsConfig | None = None
+        self._t_rm_range: tuple[float, float] = self._cfg["t_rm_range"]
+        self._y_range: tuple[float, float] | None = None
 
-        if t_running_mean_range is not None:
-            lo, hi = float(t_running_mean_range[0]), float(t_running_mean_range[1])
-            if lo >= hi:
-                raise ValueError("t_running_mean_range must have min < max.")
-            self._t_rm_range: tuple[float, float] = (lo, hi)
-        else:
-            self._t_rm_range = self._cfg["t_rm_range"]
+    def set_x_axis(self, min_val: float, max_val: float) -> AdaptivePlot:
+        """Set the x-axis (prevailing mean outdoor temperature) display range.
+
+        Parameters
+        ----------
+        min_val : float
+            Minimum prevailing mean outdoor temperature [°C].
+        max_val : float
+            Maximum prevailing mean outdoor temperature [°C].
+
+        Returns
+        -------
+        AdaptivePlot
+            Self, to support method chaining.
+
+        Raises
+        ------
+        ValueError
+            If *min_val* >= *max_val* or values are non-numeric.
+        """
+        try:
+            lo, hi = float(min_val), float(max_val)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("set_x_axis values must be numeric.") from exc
+        if lo >= hi:
+            msg = f"set_x_axis requires min < max (got {lo} >= {hi})."
+            raise ValueError(msg)
+        self._t_rm_range = (lo, hi)
+        return self
+
+    def set_y_axis(self, min_val: float, max_val: float) -> AdaptivePlot:
+        """Set the y-axis (operative temperature) display range.
+
+        Parameters
+        ----------
+        min_val : float
+            Minimum operative temperature [°C].
+        max_val : float
+            Maximum operative temperature [°C].
+
+        Returns
+        -------
+        AdaptivePlot
+            Self, to support method chaining.
+
+        Raises
+        ------
+        ValueError
+            If *min_val* >= *max_val* or values are non-numeric.
+        """
+        try:
+            lo, hi = float(min_val), float(max_val)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("set_y_axis values must be numeric.") from exc
+        if lo >= hi:
+            msg = f"set_y_axis requires min < max (got {lo} >= {hi})."
+            raise ValueError(msg)
+        self._y_range = (lo, hi)
+        return self
 
     def set_params(self, *, v: float) -> AdaptivePlot:
         """Set the air speed used to compute the cooling effect.
@@ -280,27 +329,30 @@ class AdaptivePlot:
         self._v = float(v)
         return self
 
-    def set_bands(
+    def set_regions(
         self,
         *,
-        show: BandsConfig | Sequence[str] | None = None,
+        show: RegionsConfig | Sequence[str] | None = None,
         labels: Sequence[str] | None = None,
         colors: Sequence[str] | None = None,
     ) -> AdaptivePlot:
-        """Customize which comfort bands are displayed and their appearance.
+        """Configure which comfort bands are displayed and their appearance.
 
-        Accepts either a pre-built :class:`BandsConfig` or raw parameters.
+        Accepts either a pre-built :class:`RegionsConfig` or raw parameters.
+        ``output`` and numeric ``thresholds`` do not apply here — bands are
+        identified by key (e.g. ``"80"`` or ``"cat_i"``) and their boundaries
+        are defined by the standard.
 
         Parameters
         ----------
-        show : BandsConfig, sequence of str, or None
+        show : RegionsConfig, sequence of str, or None
             Controls which bands are shown and, optionally, their appearance.
 
-            - **BandsConfig** — a fully configured instance; *labels* and
+            - **RegionsConfig** — a fully configured instance; *labels* and
               *colors* must not be supplied separately.
             - **list of band keys** — selects which bands to display; use
               *labels* / *colors* for appearance.
-            - **None** — all bands are shown.
+            - **None** — all bands are shown (default).
 
             ASHRAE keys: ``"80"``, ``"90"``.
             EN keys: ``"cat_i"``, ``"cat_ii"``, ``"cat_iii"``.
@@ -316,36 +368,42 @@ class AdaptivePlot:
         AdaptivePlot
             Self, to support method chaining.
 
+        Raises
+        ------
+        ValueError
+            If band keys are invalid, or if *labels*/*colors* are supplied
+            alongside a :class:`RegionsConfig` instance.
+
         Examples
         --------
         .. code-block:: python
 
             # Raw parameters
-            .set_bands(show=["90"], labels=["90% Zone"], colors=["#FF6B6B"])
+            .set_regions(show=["90"], labels=["90% Zone"], colors=["#FF6B6B"])
 
-            # BandsConfig (reusable)
-            config = BandsConfig(show=["90"], labels=["90% Zone"], colors=["#FF6B6B"])
-            .set_bands(show=config)
+            # RegionsConfig (reusable across plots)
+            config = RegionsConfig(show=["90"], labels=["90% Zone"], colors=["#FF6B6B"])
+            .set_regions(show=config)
         """
-        if isinstance(show, BandsConfig):
+        if isinstance(show, RegionsConfig):
             if labels is not None or colors is not None:
                 raise ValueError(
                     "labels and colors must not be provided separately when "
-                    "show is a BandsConfig instance.  Set them inside the "
-                    "BandsConfig instead."
+                    "show is a RegionsConfig instance.  Set them inside the "
+                    "RegionsConfig instead."
                 )
             config = show
         else:
-            config = BandsConfig(show=show, labels=labels, colors=colors)
+            config = RegionsConfig(show=show, labels=labels, colors=colors)
 
         config._validate(self._standard)
-        self._bands_config = config
+        self._regions_config = config
         return self
 
     def _resolve_bands(self) -> list[_ResolvedBand]:
         """Return bands with all user overrides applied."""
         all_specs: list[_BandSpec] = self._cfg["bands"]
-        cfg = self._bands_config
+        cfg = self._regions_config
 
         if cfg is not None and cfg.show is not None:
             show_set = set(cfg.show)
@@ -402,7 +460,7 @@ class AdaptivePlot:
             Overrides for the center line (``ax.plot``).
         fill_kws : dict, optional
             Shared overrides for all bands (``ax.fill_between``).  Per-band
-            colors are set via :meth:`set_bands`.
+            colors are set via :meth:`set_regions`.
         legend_kws : dict, optional
             Overrides for the legend (``ax.legend``).
 
@@ -434,8 +492,6 @@ class AdaptivePlot:
         for band in bands:
             lower = t_cmf + band.spec.lower_offset
             upper_base = t_cmf + band.spec.upper_offset
-            # Cooling effect applied only where upper boundary already exceeds 25 °C.
-            # Uses the shared adaptive_cooling_effect imported from utilities.
             upper = upper_base + adaptive_cooling_effect(self._v, upper_base)
             fill = ax.fill_between(t_rm, lower, upper, color=band.color, **fill_opts)
             fills.append(fill)
@@ -487,7 +543,10 @@ class AdaptivePlot:
             ax.set_ylabel(ylabel)
         if title is not None:
             ax.set_title(title)
+
         ax.set_xlim(self._t_rm_range)
+        if self._y_range is not None:
+            ax.set_ylim(self._y_range)
 
         return AdaptivePlotResult(
             fig=fig,
