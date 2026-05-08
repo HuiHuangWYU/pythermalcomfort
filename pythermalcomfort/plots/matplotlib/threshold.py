@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -15,13 +15,11 @@ from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
+from pythermalcomfort.plots.matplotlib._base import BasePlot
 from pythermalcomfort.plots.matplotlib._shared import (
     BasePlotResult,
-    RegionConfig,
-    ThresholdsConfig,
     _apply_default_links_to_kwargs,
     _AxisConfig,
-    _configure_regions,
     _extract_output_by_name,
     _inspect_model_signature,
     _parse_axis_range,
@@ -29,6 +27,9 @@ from pythermalcomfort.plots.matplotlib._shared import (
     _validate_model_kwargs,
     _validate_resolution,
 )
+
+#: Default color for grid cells that fall outside the model's applicability limits.
+OUT_OF_MODEL_LIMITS_COLOR: str = _PlotDefaults.color_out_of_model
 
 
 @dataclass
@@ -84,7 +85,7 @@ def _contour_paths_to_lines(
     return lines
 
 
-class ThresholdPlot:
+class ThresholdPlot(BasePlot):
     """Configure and render threshold regions for a selected model function.
 
     The API is staged and explicit:
@@ -124,11 +125,11 @@ class ThresholdPlot:
             Callable model function (typically from ``pythermalcomfort.models``).
             Its signature is inspected to validate axis names and fixed parameters.
         """
+        super().__init__()
         self._model_func = model_func
         self._x_axis: _AxisConfig | None = None
         self._y_axis: _AxisConfig | None = None
         self._fixed_values: dict[str, Any] = {}
-        self._region_config: RegionConfig | None = None
         self._default_links = _PlotDefaults.parameter_links
         (
             _,
@@ -321,68 +322,6 @@ class ThresholdPlot:
 
         self._fixed_values.update(kwargs)
 
-        return self
-
-    def set_regions(
-        self,
-        *,
-        output: str,
-        thresholds: ThresholdsConfig | Sequence[float],
-        labels: Sequence[str] | None = None,
-        colors: Sequence[str] | None = None,
-    ) -> ThresholdPlot:
-        """Set output variable and threshold region configuration.
-
-        Accepts either a pre-built :class:`ThresholdsConfig` or raw threshold
-        values (with optional *labels* and *colors*).
-
-        Parameters
-        ----------
-        output : str
-            Output field name to extract from the model result.
-        thresholds : ThresholdsConfig or sequence of float
-            A :class:`ThresholdsConfig` instance **or** a sequence of numeric
-            boundary values.  When a ``ThresholdsConfig`` is supplied, *labels*
-            and *colors* must not be given separately.
-        labels : sequence of str, optional
-            Region labels.  Ignored when *thresholds* is a ``ThresholdsConfig``.
-            Must have length ``len(thresholds) + 1`` when provided.
-        colors : sequence of str, optional
-            Region colors.  Ignored when *thresholds* is a ``ThresholdsConfig``.
-            Must have length ``len(thresholds) + 1`` when provided.
-
-        Returns
-        -------
-        ThresholdPlot
-            Self, to support method chaining.
-
-        Raises
-        ------
-        TypeError
-            If ``output`` is not a string.
-        ValueError
-            If output name is empty, if *labels* or *colors* are supplied
-            together with a ``ThresholdsConfig``, or if thresholds/labels/colors
-            are invalid.
-        """
-        # Normalise into a ThresholdsConfig
-        if isinstance(thresholds, ThresholdsConfig):
-            if labels is not None or colors is not None:
-                raise ValueError(
-                    "labels and colors must not be provided separately when "
-                    "thresholds is a ThresholdsConfig instance.  Set them "
-                    "inside the ThresholdsConfig instead."
-                )
-            config = thresholds
-        else:
-            config = ThresholdsConfig(
-                thresholds=thresholds, labels=labels, colors=colors
-            )
-
-        self._region_config = _configure_regions(
-            output=output,
-            thresholds=config,
-        )
         return self
 
     def _validate_plot_inputs(self, *, fill_kws: Mapping[str, Any] | None) -> None:

@@ -6,11 +6,11 @@ import matplotlib
 import numpy as np
 import pytest
 
+from pythermalcomfort.plots.matplotlib import ThresholdsConfig
 from pythermalcomfort.plots.matplotlib.threshold import (
     OUT_OF_MODEL_LIMITS_COLOR,
     ThresholdPlot,
     ThresholdPlotResult,
-    ThresholdsConfig,
 )
 
 matplotlib.use("Agg")

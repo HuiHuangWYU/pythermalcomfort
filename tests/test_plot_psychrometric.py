@@ -27,7 +27,7 @@ def test_import_export() -> None:
 def test_set_x_axis_only_accepts_tdb() -> None:
     """Test set_x_axis strictly enforces 'tdb'."""
     plot = _new_plot()
-    with pytest.raises(ValueError, match="strictly requires the x-axis to be 'tdb'"):
+    with pytest.raises(ValueError, match="requires the x-axis to be 'tdb'"):
         plot.set_x_axis("tr", 10.0, 40.0, resolution=1.0)
 
     # Valid input should not raise
@@ -37,7 +37,7 @@ def test_set_x_axis_only_accepts_tdb() -> None:
 def test_set_y_axis_only_accepts_hr() -> None:
     """Test set_y_axis strictly enforces 'hr'."""
     plot = _new_plot()
-    with pytest.raises(ValueError, match="strictly requires the y-axis to be 'hr'"):
+    with pytest.raises(ValueError, match="requires the y-axis to be 'hr'"):
         plot.set_y_axis("rh", 0.0, 0.03, resolution=0.001)
 
     # Valid input should not raise

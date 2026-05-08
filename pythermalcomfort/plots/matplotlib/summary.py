@@ -11,11 +11,10 @@ import numpy as np
 import pandas as pd
 from matplotlib.axes import Axes
 
+from pythermalcomfort.plots.matplotlib._base import BasePlot
 from pythermalcomfort.plots.matplotlib._shared import (
     BasePlotResult,
-    RegionConfig,
     ThresholdsConfig,
-    _configure_regions,
     _is_light_color,
     _PlotDefaults,
 )
@@ -287,7 +286,7 @@ def _plot_summary(
 # ── public API ─────────────────────────────────────────────────────────────
 
 
-class SummaryPlot:
+class SummaryPlot(BasePlot):
     """Build and render a threshold summary plot from tabular model outputs.
 
     The class works with an existing DataFrame that already contains the target
@@ -309,9 +308,9 @@ class SummaryPlot:
         ValueError
             If ``df`` is empty.
         """
+        super().__init__()
         _validate_dataframe(df)
         self._df = df
-        self._region_config: RegionConfig | None = None
 
     def set_regions(
         self,
@@ -335,11 +334,11 @@ class SummaryPlot:
             boundary values.  When a ``ThresholdsConfig`` is supplied, *labels*
             and *colors* must not be given separately.
         labels : sequence of str, optional
-            Region labels.  Ignored when *thresholds* is a ``ThresholdsConfig``.
-            Must have length ``len(thresholds) + 1`` when provided.
+            Region labels.  Must have length ``len(thresholds) + 1`` when
+            provided.
         colors : sequence of str, optional
-            Region colors.  Ignored when *thresholds* is a ``ThresholdsConfig``.
-            Must have length ``len(thresholds) + 1`` when provided.
+            Region colors.  Must have length ``len(thresholds) + 1`` when
+            provided.
 
         Returns
         -------
@@ -357,23 +356,11 @@ class SummaryPlot:
         """
         output_name = _validate_output_column(self._df, output)
         _validate_output_values(self._df, output_name)
-
-        if isinstance(thresholds, ThresholdsConfig):
-            if labels is not None or colors is not None:
-                raise ValueError(
-                    "labels and colors must not be provided separately when "
-                    "thresholds is a ThresholdsConfig instance.  Set them "
-                    "inside the ThresholdsConfig instead."
-                )
-            config = thresholds
-        else:
-            config = ThresholdsConfig(
-                thresholds=thresholds, labels=labels, colors=colors
-            )
-
-        self._region_config = _configure_regions(
+        super().set_regions(
             output=output_name,
-            thresholds=config,
+            thresholds=thresholds,
+            labels=labels,
+            colors=colors,
         )
         return self
 
