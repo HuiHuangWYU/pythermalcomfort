@@ -317,7 +317,7 @@ def test_plot_smoke_returns_editable_lines_present_fills_title_and_legend() -> N
     assert all(isinstance(line, Line2D) for line in result.lines)
 
     legend_labels = [text.get_text() for text in result.legend.get_texts()]
-    assert legend_labels == ["PMV < -0.5", "-0.5 <= PMV < 0.5", "PMV >= 0.5"]
+    assert legend_labels == ["PMV < -0.5", "-0.5 ≤ PMV < 0.5", "PMV ≥ 0.5"]
 
     result.lines[0].set_linewidth(2.5)
     assert result.lines[0].get_linewidth() == 2.5

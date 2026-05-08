@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.axes import Axes
+from matplotlib.legend import Legend
+from matplotlib.patches import Patch
 
 from pythermalcomfort.plots.matplotlib._base import BasePlot
 from pythermalcomfort.plots.matplotlib._shared import (
@@ -26,7 +28,7 @@ from pythermalcomfort.plots.matplotlib._shared import (
 
 @dataclass
 class SummaryPlotResult(BasePlotResult):
-    """Container with handles and processed data from :meth:`SummaryPlot.plot`.
+    """Container with handles returned by :meth:`SummaryPlot.plot`.
 
     Attributes
     ----------
@@ -34,17 +36,17 @@ class SummaryPlotResult(BasePlotResult):
         Matplotlib figure containing the summary plot.
     ax : Axes
         Matplotlib axis containing the summary plot.
-    data : DataFrame
-        Copy of input DataFrame with an added output label column.
-    region_percentages : Series
-        Percentage share per region label.
+    percentages : Series
+        Percentage share per region, indexed by region label.
     artists : list
-        List of rendered artists for post-customization.
+        List of rendered bar and text artists.
+    legend : Legend or None
+        Legend artist if ``legend=True``, otherwise ``None``.
     """
 
-    data: pd.DataFrame
-    region_percentages: pd.Series
+    percentages: pd.Series
     artists: list[Any]
+    legend: Legend | None
 
 
 # ── validation helpers ─────────────────────────────────────────────────────
@@ -94,55 +96,38 @@ def _validate_output_values(df: pd.DataFrame, output_column: str) -> None:
 # ── categorization ─────────────────────────────────────────────────────────
 
 
-def _categorize_output_values(
-    df_copy: pd.DataFrame,
+def _compute_region_percentages(
+    df: pd.DataFrame,
     *,
     output_column: str,
-    label_column: str,
     levels: Sequence[float],
     region_labels: Sequence[str],
-) -> tuple[pd.DataFrame, pd.Series]:
-    """Assign each row to a threshold region and compute region percentages."""
+) -> pd.Series:
+    """Assign each row to a threshold region and return percentage per region."""
     bins = [-np.inf, *levels, np.inf]
-    df_copy[output_column] = pd.to_numeric(df_copy[output_column], errors="raise")
-    df_copy[label_column] = pd.cut(
-        df_copy[output_column],
-        bins=bins,
-        labels=region_labels,
-        right=False,
-    )
-
-    region_percentages = (
-        df_copy[label_column]
-        .value_counts(normalize=True)
+    values = pd.to_numeric(df[output_column], errors="raise")
+    categorized = pd.cut(values, bins=bins, labels=region_labels, right=False)
+    return (
+        categorized.value_counts(normalize=True)
         .reindex(region_labels, fill_value=0.0)
         .mul(100)
         .round(1)
     )
 
-    return df_copy, region_percentages
-
 
 # ── axis preparation ───────────────────────────────────────────────────────
 
 
-def _prepare_axis(ax: Axes, *, title: str | None) -> None:
-    """Prepare a clean axis for summary bar rendering."""
+def _prepare_axis(ax: Axes) -> None:
+    """Prepare a clean, spine-free axis for summary bar rendering."""
     ax.clear()
     ax.set_xticks([])
     ax.set_yticks([])
     for spine in ax.spines.values():
         spine.set_visible(False)
 
-    if title is not None:
-        ax.set_title(
-            title,
-            fontsize=_PlotDefaults.title_fontsize,
-            pad=_PlotDefaults.Summary.title_pad,
-        )
 
-
-# ── annotation helpers ────────────────────────────────────────────────────
+# ── annotation helper ─────────────────────────────────────────────────────
 
 
 def _add_center_text(
@@ -153,7 +138,7 @@ def _add_center_text(
     text: str,
     color: str,
 ) -> Any:
-    """Add centered bold text annotation."""
+    """Add a bold, centred text annotation."""
     return ax.text(
         x,
         y,
@@ -166,45 +151,6 @@ def _add_center_text(
     )
 
 
-def _add_region_annotations(
-    ax: Axes,
-    *,
-    value: float,
-    label: str,
-    color: str,
-    percentage_x: float,
-    percentage_y: float,
-    label_x: float,
-    label_y: float,
-    label_ha: str,
-    label_va: str,
-) -> list[Any]:
-    """Add percentage and region-label annotations for one region."""
-    is_light = _is_light_color(color)
-    percentage_text_color = "black" if is_light else "white"
-    label_color = "dimgray" if is_light else color
-
-    artists: list[Any] = [
-        _add_center_text(
-            ax,
-            x=percentage_x,
-            y=percentage_y,
-            text=f"{value:.1f}%",
-            color=percentage_text_color,
-        ),
-        ax.text(
-            label_x,
-            label_y,
-            label,
-            ha=label_ha,
-            va=label_va,
-            fontsize=_PlotDefaults.Summary.label_fontsize,
-            color=label_color,
-        ),
-    ]
-    return artists
-
-
 # ── unified summary renderer ──────────────────────────────────────────────
 
 
@@ -215,8 +161,9 @@ def _plot_summary(
     region_percentages: pd.Series,
     region_labels: Sequence[str],
     region_colors: Sequence[str],
+    show_region_labels: bool,
 ) -> list[Any]:
-    """Render a stacked summary bar (horizontal *or* vertical) with annotations."""
+    """Render a stacked summary bar (horizontal or vertical) with annotations."""
     D = _PlotDefaults.Summary
     artists: list[Any] = []
 
@@ -254,7 +201,11 @@ def _plot_summary(
             )
         artists.append(bar)
 
-        if value > 0:
+        if value >= D.pct_min_to_show:
+            is_light = _is_light_color(color)
+            pct_color = "black" if is_light else "white"
+            label_color = "dimgray" if is_light else color
+
             if vertical:
                 center_y = cumulative + value / 2
                 pct_x, pct_y = D.v_bar_x, center_y
@@ -265,20 +216,24 @@ def _plot_summary(
                 lbl_x, lbl_y = cumulative + value / 2, D.h_label_y
                 lbl_ha, lbl_va = "center", "bottom"
 
-            artists.extend(
-                _add_region_annotations(
-                    ax,
-                    value=value,
-                    label=label,
-                    color=color,
-                    percentage_x=pct_x,
-                    percentage_y=pct_y,
-                    label_x=lbl_x,
-                    label_y=lbl_y,
-                    label_ha=lbl_ha,
-                    label_va=lbl_va,
+            artists.append(
+                _add_center_text(
+                    ax, x=pct_x, y=pct_y, text=f"{value:.1f}%", color=pct_color
                 )
             )
+
+            if show_region_labels:
+                artists.append(
+                    ax.text(
+                        lbl_x,
+                        lbl_y,
+                        label,
+                        ha=lbl_ha,
+                        va=lbl_va,
+                        fontsize=D.label_fontsize,
+                        color=label_color,
+                    )
+                )
 
         cumulative += value
 
@@ -372,6 +327,8 @@ class SummaryPlot(BasePlot):
         ax: Axes | None = None,
         title: str | None = None,
         vertical: bool = False,
+        legend: bool = True,
+        legend_kws: Mapping[str, Any] | None = None,
     ) -> SummaryPlotResult:
         """Render a threshold summary plot for the configured output column.
 
@@ -381,14 +338,21 @@ class SummaryPlot(BasePlot):
             Existing axis to draw on.  If ``None``, a new figure/axis is created
             with a default size of ``(7, 4)`` inches.
         title : str, optional
-            Optional axis title.
+            Optional axis title.  When both *title* and *legend* are shown the
+            legend sits just above the chart and the title floats above it,
+            matching the spacing used by :class:`ThresholdPlot`.
         vertical : bool
             If ``True``, render a vertical stacked bar; otherwise horizontal.
+        legend : bool
+            Whether to draw a colour-coded legend above the bar.  When
+            ``True``, region labels are omitted from the bar itself.
+        legend_kws : dict, optional
+            Keyword overrides forwarded to ``ax.legend``.
 
         Returns
         -------
         SummaryPlotResult
-            Result with figure, axis, processed data, and artists.
+            Result with figure, axis, percentages, artists, and legend handle.
 
         Raises
         ------
@@ -407,29 +371,51 @@ class SummaryPlot(BasePlot):
             else:
                 fig = ax.figure
 
-            label_column = f"{rc.output_name}_label"
-            df_copy = self._df.copy()
-            df_copy, region_percentages = _categorize_output_values(
-                df_copy,
+            percentages = _compute_region_percentages(
+                self._df,
                 output_column=rc.output_name,
-                label_column=label_column,
                 levels=rc.thresholds,
                 region_labels=rc.labels,
             )
 
-            _prepare_axis(ax, title=title)
+            _prepare_axis(ax)
             artists = _plot_summary(
                 ax,
                 vertical=vertical,
-                region_percentages=region_percentages,
+                region_percentages=percentages,
                 region_labels=rc.labels,
                 region_colors=rc.colors,
+                show_region_labels=not legend,
             )
+
+            legend_artist: Legend | None = None
+            if legend:
+                lg_opts = dict(legend_kws or {})
+                lg_opts.setdefault("loc", "lower center")
+                lg_opts.setdefault(
+                    "bbox_to_anchor",
+                    _PlotDefaults.legend_bbox_to_anchor_with_title
+                    if title is not None
+                    else _PlotDefaults.Threshold.legend_bbox_to_anchor,
+                )
+                lg_opts.setdefault(
+                    "ncol", min(len(rc.labels), _PlotDefaults.Threshold.legend_ncol_max)
+                )
+                handles = [
+                    Patch(facecolor=color, label=label)
+                    for label, color in zip(rc.labels, rc.colors, strict=False)
+                ]
+                legend_artist = ax.legend(handles=handles, **lg_opts)
+
+            if title is not None:
+                ax.set_title(
+                    title, y=_PlotDefaults.title_y_with_legend if legend else None
+                )
 
             return SummaryPlotResult(
                 fig=fig,
                 ax=ax,
-                data=df_copy,
-                region_percentages=region_percentages,
+                percentages=percentages,
                 artists=artists,
+                legend=legend_artist,
             )

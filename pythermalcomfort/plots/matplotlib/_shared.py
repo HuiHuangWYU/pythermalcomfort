@@ -124,11 +124,11 @@ class _PlotDefaults:
     class Summary:
         """Defaults specific to :class:`SummaryPlot`."""
 
-        title_pad: int = 10
         bar_edgecolor: str = "white"
         bar_linewidth: float = 1.0
         percentage_fontsize: int = 12
         label_fontsize: int = 11
+        pct_min_to_show: float = 5.0
         h_xlim: tuple = (0.0, 100.0)
         h_ylim: tuple = (-0.6, 0.6)
         h_bar_y: float = 0.0
@@ -404,8 +404,8 @@ def _build_region_labels(
     out_name = output_name.upper()
     region_labels = [f"{out_name} < {levels[0]:g}"]
     for lower, upper in zip(levels, levels[1:], strict=False):
-        region_labels.append(f"{lower:g} <= {out_name} < {upper:g}")
-    region_labels.append(f"{out_name} >= {levels[-1]:g}")
+        region_labels.append(f"{lower:g} ≤ {out_name} < {upper:g}")
+    region_labels.append(f"{out_name} ≥ {levels[-1]:g}")
     return region_labels
 
 

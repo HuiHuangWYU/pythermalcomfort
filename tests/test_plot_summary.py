@@ -6,6 +6,7 @@ import pytest
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.legend import Legend
 
 from pythermalcomfort.plots.matplotlib.summary import (
     SummaryPlot,
@@ -97,25 +98,12 @@ def test_plot_vertical_mode_executes(pmv_df: pd.DataFrame) -> None:
     assert len(result.artists) > 0
 
 
-def test_plot_returns_processed_data(pmv_df: pd.DataFrame) -> None:
+def test_plot_returns_percentages(pmv_df: pd.DataFrame) -> None:
     result = _new_summary(pmv_df).plot()
 
-    assert result.data is not pmv_df
-    assert result.data["pmv"].tolist() == pmv_df["pmv"].tolist()
-    assert "pmv_label" in result.data.columns
-    assert result.data["pmv_label"].astype(str).tolist() == [
-        "PMV < -0.5",
-        "-0.5 <= PMV < 0.5",
-        "PMV >= 0.5",
-    ]
-
-
-def test_plot_returns_region_percentages(pmv_df: pd.DataFrame) -> None:
-    result = _new_summary(pmv_df).plot()
-
-    expected_labels = ["PMV < -0.5", "-0.5 <= PMV < 0.5", "PMV >= 0.5"]
-    assert result.region_percentages.index.tolist() == expected_labels
-    assert result.region_percentages.tolist() == pytest.approx([33.3, 33.3, 33.3])
+    expected_labels = ["PMV < -0.5", "-0.5 ≤ PMV < 0.5", "PMV ≥ 0.5"]
+    assert result.percentages.index.tolist() == expected_labels
+    assert result.percentages.tolist() == pytest.approx([33.3, 33.3, 33.3])
 
 
 def test_plot_uses_custom_labels_when_provided(pmv_df: pd.DataFrame) -> None:
@@ -130,8 +118,7 @@ def test_plot_uses_custom_labels_when_provided(pmv_df: pd.DataFrame) -> None:
         .plot()
     )
 
-    assert result.region_percentages.index.tolist() == custom_labels
-    assert list(result.data["pmv_label"].cat.categories) == custom_labels
+    assert result.percentages.index.tolist() == custom_labels
 
 
 def test_plot_supports_utci_like_existing_column() -> None:
@@ -144,10 +131,9 @@ def test_plot_supports_utci_like_existing_column() -> None:
 
     result = SummaryPlot(df).set_regions(output="utci", thresholds=[9, 26]).plot()
 
-    expected_labels = ["UTCI < 9", "9 <= UTCI < 26", "UTCI >= 26"]
-    assert "utci_label" in result.data.columns
-    assert result.region_percentages.index.tolist() == expected_labels
-    assert result.region_percentages.tolist() == pytest.approx([33.3, 33.3, 33.3])
+    expected_labels = ["UTCI < 9", "9 ≤ UTCI < 26", "UTCI ≥ 26"]
+    assert result.percentages.index.tolist() == expected_labels
+    assert result.percentages.tolist() == pytest.approx([33.3, 33.3, 33.3])
 
 
 def test_set_regions_rejects_non_numeric_output_values() -> None:
@@ -172,11 +158,29 @@ def test_summary_with_thresholds_config() -> None:
     df = pd.DataFrame({"pmv": [0.7, -0.3, 0.1, -0.8, 1.2]})
     result = SummaryPlot(df).set_regions(output="pmv", thresholds=config).plot()
     assert isinstance(result, SummaryPlotResult)
-    assert list(result.region_percentages.index) == ["Cool", "Comfortable", "Warm"]
+    assert list(result.percentages.index) == ["Cool", "Comfortable", "Warm"]
 
 
 def test_summary_handles_numeric_string_column() -> None:
     df = pd.DataFrame({"pmv": ["0.7", "-0.3", "0.1", "-0.8", "1.2"]})
     result = SummaryPlot(df).set_regions(output="pmv", thresholds=[-0.5, 0.5]).plot()
     assert isinstance(result, SummaryPlotResult)
-    assert result.region_percentages.sum() > 99.9
+    assert result.percentages.sum() > 99.9
+
+
+def test_plot_legend_shown_by_default(pmv_df: pd.DataFrame) -> None:
+    result = _new_summary(pmv_df).plot()
+
+    assert isinstance(result.legend, Legend)
+
+
+def test_plot_legend_none_when_disabled(pmv_df: pd.DataFrame) -> None:
+    result = _new_summary(pmv_df).plot(legend=False)
+
+    assert result.legend is None
+
+
+def test_plot_result_has_no_data_attribute(pmv_df: pd.DataFrame) -> None:
+    result = _new_summary(pmv_df).plot()
+
+    assert not hasattr(result, "data")
