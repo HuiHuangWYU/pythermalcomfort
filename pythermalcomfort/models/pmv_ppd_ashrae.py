@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from pythermalcomfort.classes_input import PMVPPDInputs
-from pythermalcomfort.classes_return import PMVPPD
+from pythermalcomfort.classes_return import PMVPPDAshrae
 from pythermalcomfort.models._pmv_ppd_optimized import _pmv_ppd_optimized
 from pythermalcomfort.models.cooling_effect import cooling_effect
 from pythermalcomfort.shared_functions import _finalize_scalar_or_array, mapping
@@ -28,7 +28,7 @@ def pmv_ppd_ashrae(
     limit_inputs: bool = True,
     airspeed_control: bool = True,
     round_output: bool = True,
-) -> PMVPPD:
+) -> PMVPPDAshrae:
     """Return Predicted Mean Vote (PMV) and Predicted Percentage of Dissatisfied (PPD)
     calculated in accordance with the ASHRAE 55 Standard.
 
@@ -239,7 +239,7 @@ def pmv_ppd_ashrae(
         10: "Hot",
     }
 
-    return PMVPPD(
+    return PMVPPDAshrae(
         pmv=pmv_array,
         ppd=ppd_array,
         tsv=mapping(pmv_array, thermal_sensation),

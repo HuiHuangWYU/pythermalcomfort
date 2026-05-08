@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from pythermalcomfort.classes_return import PMVPPD
+from pythermalcomfort.classes_return import PMVPPDAshrae
 from pythermalcomfort.models import pmv_ppd_ashrae
 from pythermalcomfort.utilities import Models
 from tests.conftest import Urls, retrieve_reference_table, validate_result
@@ -100,7 +100,7 @@ class TestPmvPpd:
                 model=Models.ashrae_55_2023.value,
                 limit_inputs=False,
             ),
-            PMVPPD(
+            PMVPPDAshrae(
                 pmv=np.float64(4.48),
                 ppd=np.float64(100.0),
                 tsv=np.str_("Hot"),
