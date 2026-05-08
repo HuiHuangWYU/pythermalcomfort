@@ -24,14 +24,18 @@ def test_import_export() -> None:
         pytest.fail(f"Failed to import PsychrometricPlot: {exc}")
 
 
-def test_set_x_axis_only_accepts_tdb() -> None:
-    """Test set_x_axis strictly enforces 'tdb'."""
+def test_set_x_axis_accepts_any_model_temperature_param() -> None:
+    """tdb and tr are both valid x-axis parameters; unknown params are rejected."""
+    # tdb is always accepted
     plot = _new_plot()
-    with pytest.raises(ValueError, match="requires the x-axis to be 'tdb'"):
-        plot.set_x_axis("tr", 10.0, 40.0, resolution=1.0)
-
-    # Valid input should not raise
     plot.set_x_axis("tdb", 10.0, 40.0, resolution=1.0)
+
+    # tr is also a valid model parameter when it is not already in fixed params
+    plot_tr = PsychrometricPlot(pmv_ppd_iso).set_params(vr=0.1, met=1.2, clo=0.5)
+    plot_tr.set_x_axis("tr", 10.0, 40.0, resolution=1.0)
+
+    with pytest.raises(ValueError):
+        plot.set_x_axis("not_a_model_param", 10.0, 40.0, resolution=1.0)
 
 
 def test_set_y_axis_only_accepts_hr() -> None:

@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 from matplotlib.axes import Axes
+from matplotlib.path import Path as MplPath
 
 from pythermalcomfort.plots.matplotlib._shared import (
     _apply_default_links_to_kwargs,
@@ -24,14 +25,25 @@ from pythermalcomfort.plots.matplotlib.threshold import (
 from pythermalcomfort.utilities import p_sat, psy_ta_rh
 
 
+def _hr_to_rh(hr: np.ndarray, tdb: np.ndarray, p_atm: float) -> np.ndarray:
+    """Convert humidity ratio [kg/kg] to relative humidity [%].
+
+    Inverse of the standard humidity-ratio formula:
+    ``hr = 0.62198 * p_vap / (p_atm - p_vap)``
+    """
+    p_vap = hr * p_atm / (0.62198 + hr)
+    return p_vap / p_sat(tdb) * 100.0
+
+
 class PsychrometricPlot(ThresholdPlot):
     """Configure and render a psychrometric chart with threshold regions.
 
-    Inherits from :class:`ThresholdPlot` but strictly enforces ``tdb``
-    (dry-bulb temperature) on the x-axis and ``hr`` (humidity ratio) on the
-    y-axis.  Grid evaluation converts humidity ratio back to relative humidity
-    before calling the underlying model.  Constant-RH background curves are
-    drawn on top of the threshold regions.
+    Inherits from :class:`ThresholdPlot` and strictly enforces ``hr``
+    (humidity ratio) on the y-axis.  Any model temperature parameter
+    (``tdb``, ``tr``, etc.) may be used on the x-axis.  Grid evaluation
+    converts humidity ratio back to relative humidity before calling the
+    underlying model.  Constant-RH background curves are drawn on top of
+    the threshold regions.
 
     Examples
     --------
@@ -58,16 +70,21 @@ class PsychrometricPlot(ThresholdPlot):
         *,
         resolution: float,
     ) -> PsychrometricPlot:
-        """Set x-axis; must be ``'tdb'`` (dry-bulb temperature).
+        """Set x-axis; any model temperature parameter is accepted.
+
+        Common choices are ``'tdb'`` (dry-bulb temperature) and ``'tr'``
+        (mean radiant temperature).  The RH curves and saturation boundary
+        overlaid on the chart are computed using the x-axis values as the
+        reference temperature, so accuracy is highest when ``'tdb'`` is used.
 
         Parameters
         ----------
         name : str
-            Must be ``'tdb'``.
+            Model argument name mapped to the x-axis (e.g. ``'tdb'``, ``'tr'``).
         min_val : float
-            Minimum dry-bulb temperature.
+            Minimum value.
         max_val : float
-            Maximum dry-bulb temperature.
+            Maximum value.
         resolution : float
             Grid step along the x-axis.
 
@@ -79,13 +96,10 @@ class PsychrometricPlot(ThresholdPlot):
         Raises
         ------
         ValueError
-            If ``name`` is not ``'tdb'``, or if range/resolution are invalid.
+            If ``name`` is not a valid model argument, or range/resolution
+            are invalid.
         """
-        if name != "tdb":
-            raise ValueError(
-                "PsychrometricPlot requires the x-axis to be 'tdb' (dry-bulb temperature)."
-            )
-        return super().set_x_axis(name, min_val, max_val, resolution=resolution)
+        return super().set_x_axis(name, min_val, max_val, resolution=resolution)  # type: ignore[return-value]
 
     def set_y_axis(
         self,
@@ -134,8 +148,7 @@ class PsychrometricPlot(ThresholdPlot):
             )
             raise ValueError(msg)
         if self._x_axis is not None and name == self._x_axis.name:
-            msg = "x and y axis parameters must be different. "
-            raise ValueError(msg)
+            raise ValueError("x and y axis parameters must be different. ")
 
         min_float, max_float = _parse_axis_range(min_val, max_val)
         resolution_float = _validate_resolution(resolution)
@@ -157,25 +170,40 @@ class PsychrometricPlot(ThresholdPlot):
         """Evaluate the model on the psychrometric grid and return shaped output.
 
         Converts the humidity-ratio grid (*y*) to relative humidity before
-        calling the model.  Cells where RH > 100 % or RH < 0 % are physically
-        impossible and are returned as NaN so the parent renders them as
-        out-of-model areas.
+        calling the model.  Cells above the saturation curve (RH > 100 %) are
+        clamped to RH = 100 % rather than set to NaN, so the contourf fills the
+        entire grid rectangle without holes or a jagged upper edge.  The
+        ``plot()`` method then overlays a smooth white fill that hides the
+        above-saturation region.  Cells where the model itself returns NaN due
+        to applicability limits are still propagated as NaN.
+
+        When the x-axis is ``'tdb'``, dry-bulb temperature is used directly for
+        the saturation-pressure calculation.  When a fixed ``'tdb'`` is provided
+        via :meth:`set_params`, that value is used instead.  Otherwise the
+        x-axis values serve as an approximation (accurate when ``tr ≈ tdb``).
         """
-        x_flat = np.asarray(x).ravel()  # tdb
+        x_flat = np.asarray(x).ravel()
         y_flat = np.asarray(y).ravel()  # hr (kg/kg)
 
-        # Reverse-calculate RH from humidity ratio and dry-bulb temperature.
-        p_atm = _PlotDefaults.Psychrometric.p_atm
-        p_vap = (y_flat * p_atm) / (0.62198 + y_flat)
-        p_sat_values = p_sat(x_flat)
-        rh_flat = (p_vap / p_sat_values) * 100.0
+        # Determine which temperature to use for the hr → rh conversion.
+        if self._x_axis.name == "tdb":
+            tdb_for_psat = x_flat
+        elif "tdb" in self._fixed_values:
+            tdb_for_psat = np.full_like(x_flat, float(self._fixed_values["tdb"]))
+        else:
+            # tr auto-links to tdb; using x-axis values is a reasonable approximation.
+            tdb_for_psat = x_flat
 
-        invalid_mask = (rh_flat < 0.0) | (rh_flat > 100.0)
-        # Clamp to a safe value so the model does not receive out-of-range RH.
-        rh_safe = np.where(invalid_mask, 50.0, rh_flat)
+        p_atm = _PlotDefaults.Psychrometric.p_atm
+        rh_flat = _hr_to_rh(y_flat, tdb_for_psat, p_atm)
+
+        # Clamp RH to [0, 100] — super-saturated cells are evaluated at rh=100%
+        # rather than being excluded.  This keeps the contourf gap-free; the
+        # white overlay in plot() hides the above-saturation region.
+        rh_safe = np.clip(rh_flat, 0.0, 100.0)
 
         grid_kwargs: dict[str, Any] = dict(self._fixed_values)
-        grid_kwargs["tdb"] = x_flat
+        grid_kwargs[self._x_axis.name] = x_flat
         grid_kwargs["rh"] = rh_safe
         grid_kwargs = _apply_default_links_to_kwargs(
             grid_kwargs,
@@ -209,7 +237,6 @@ class PsychrometricPlot(ThresholdPlot):
             )
             raise ValueError(msg)
 
-        z_flat[invalid_mask] = np.nan
         return z_flat.reshape(x.shape)
 
     def plot(
@@ -229,7 +256,8 @@ class PsychrometricPlot(ThresholdPlot):
         Delegates to :meth:`ThresholdPlot.plot` for contour rendering, then
         overlays:
 
-        - A white fill masking the physically impossible RH > 100 % area.
+        - A white fill masking the physically impossible RH > 100 % area,
+          starting exactly at the smooth saturation curve.
         - Dotted constant-RH background curves at 10 % intervals.
 
         Parameters
@@ -270,7 +298,7 @@ class PsychrometricPlot(ThresholdPlot):
         )
         ax = result.ax
 
-        tdb_dense = np.linspace(
+        t_dense = np.linspace(
             self._x_axis.min_val,
             self._x_axis.max_val,
             _PlotDefaults.Psychrometric.n_tdb_points,
@@ -279,10 +307,13 @@ class PsychrometricPlot(ThresholdPlot):
             self._y_axis.max_val - self._y_axis.min_val
         ) * _PlotDefaults.Psychrometric.rh_label_offset_fraction
 
-        # White fill hides the grey out-of-model patch above the RH = 100% curve.
-        hr_100 = psy_ta_rh(tdb_dense, np.full_like(tdb_dense, 100.0)).hr
+        # White fill masks the physically impossible RH > 100% region.
+        # Because the contourf fills the entire grid (super-saturated cells are
+        # evaluated at rh=100% rather than NaN), there are no jagged pcolormesh
+        # edges to cover.  The mask starts exactly at the smooth saturation curve.
+        hr_100 = psy_ta_rh(t_dense, np.full_like(t_dense, 100.0)).hr
         ax.fill_between(
-            tdb_dense,
+            t_dense,
             hr_100,
             self._y_axis.max_val,
             color="white",
@@ -290,14 +321,35 @@ class PsychrometricPlot(ThresholdPlot):
             edgecolor="none",
         )
 
+        # Clip threshold boundary lines to the valid region so they do not
+        # extend above the saturation curve.  The clip path is a closed polygon
+        # tracing the bottom of the plot → saturation curve (right-to-left) → close.
+        if result.lines:
+            x_min = self._x_axis.min_val
+            x_max = self._x_axis.max_val
+            y_min = self._y_axis.min_val
+            clip_x = np.concatenate([[x_min, x_max], t_dense[::-1]])
+            clip_y = np.concatenate([[y_min, y_min], hr_100[::-1]])
+            n = len(clip_x)
+            verts = np.column_stack(
+                [np.append(clip_x, clip_x[0]), np.append(clip_y, clip_y[0])]
+            )
+            codes = np.array(
+                [MplPath.MOVETO] + [MplPath.LINETO] * (n - 1) + [MplPath.CLOSEPOLY],
+                dtype=np.uint8,
+            )
+            valid_clip = MplPath(verts, codes)
+            for line in result.lines:
+                line.set_clip_path(valid_clip, ax.transData)
+
         step = _PlotDefaults.Psychrometric.rh_curve_step
         for rh_target in range(step, 110, step):
-            hr_line = psy_ta_rh(tdb_dense, np.full_like(tdb_dense, float(rh_target))).hr
+            hr_line = psy_ta_rh(t_dense, np.full_like(t_dense, float(rh_target))).hr
             in_range = hr_line <= self._y_axis.max_val
             if not in_range.any():
                 continue
             ax.plot(
-                tdb_dense[in_range],
+                t_dense[in_range],
                 hr_line[in_range],
                 color=_PlotDefaults.Psychrometric.rh_line_color,
                 linestyle=":",
@@ -306,7 +358,7 @@ class PsychrometricPlot(ThresholdPlot):
             )
             last_idx = int(np.where(in_range)[0][-1])
             ax.text(
-                tdb_dense[last_idx],
+                t_dense[last_idx],
                 hr_line[last_idx] + label_offset,
                 f"{rh_target}%",
                 color=_PlotDefaults.Psychrometric.rh_line_color,
