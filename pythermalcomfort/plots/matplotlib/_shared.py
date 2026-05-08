@@ -79,6 +79,10 @@ class _PlotDefaults:
     figsize: tuple = (7, 4)
     fill_alpha: float = 1.0
     title_fontsize: int = 13
+    # When legend and title are both shown, the legend sits just above the axes
+    # and the title floats above the legend.
+    legend_bbox_to_anchor_with_title: tuple = (0.5, 1.05)
+    title_y_with_legend: float = 1.15
 
     class Threshold:
         """Defaults specific to :class:`ThresholdPlot`."""

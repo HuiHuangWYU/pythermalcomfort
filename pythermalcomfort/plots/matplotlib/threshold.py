@@ -175,7 +175,10 @@ class ThresholdPlot(GridBasePlot):
         legend_opts = dict(legend_kws or {})
         legend_opts.setdefault("loc", _PlotDefaults.Threshold.legend_loc)
         legend_opts.setdefault(
-            "bbox_to_anchor", _PlotDefaults.Threshold.legend_bbox_to_anchor
+            "bbox_to_anchor",
+            _PlotDefaults.legend_bbox_to_anchor_with_title
+            if title is not None
+            else _PlotDefaults.Threshold.legend_bbox_to_anchor,
         )
         legend_opts.setdefault("frameon", _PlotDefaults.Threshold.legend_frameon)
 
@@ -273,7 +276,7 @@ class ThresholdPlot(GridBasePlot):
         ax.set_xlabel(self._x_axis.name)
         ax.set_ylabel(self._y_axis.name)
         if title is not None:
-            ax.set_title(title)
+            ax.set_title(title, y=_PlotDefaults.title_y_with_legend if legend else None)
 
         return ThresholdPlotResult(
             fig=fig,

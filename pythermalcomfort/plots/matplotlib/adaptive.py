@@ -506,7 +506,13 @@ class AdaptivePlot(BasePlot):
         legend_artist: Legend | None = None
         if legend:
             lg_opts = dict(legend_kws or {})
-            lg_opts.setdefault("loc", _PlotDefaults.Adaptive.legend_loc)
+            if title is not None:
+                lg_opts.setdefault("loc", "lower center")
+                lg_opts.setdefault(
+                    "bbox_to_anchor", _PlotDefaults.legend_bbox_to_anchor_with_title
+                )
+            else:
+                lg_opts.setdefault("loc", _PlotDefaults.Adaptive.legend_loc)
             lg_opts.setdefault("frameon", _PlotDefaults.Adaptive.legend_frameon)
 
             handles: list[Any] = []
@@ -542,7 +548,7 @@ class AdaptivePlot(BasePlot):
         if ylabel is not None:
             ax.set_ylabel(ylabel)
         if title is not None:
-            ax.set_title(title)
+            ax.set_title(title, y=_PlotDefaults.title_y_with_legend if legend else None)
 
         ax.set_xlim(self._t_rm_range)
         if self._y_range is not None:
