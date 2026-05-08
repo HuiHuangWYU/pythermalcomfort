@@ -92,7 +92,6 @@ class _PlotDefaults:
         line_linewidth: float = 1.0
         legend_loc: str = "lower center"
         legend_bbox_to_anchor: tuple = (0.5, 1.02)
-        legend_frameon: bool = False
         legend_ncol_max: int = 4
         zorder_invalid: float = 1.5
 
@@ -107,10 +106,7 @@ class _PlotDefaults:
             "linestyle": "--",
         }
         legend_loc: str = "lower right"
-        legend_frameon: bool = False
-        grid_linestyle: str = "--"
-        grid_linewidth: float = 0.5
-        grid_alpha: float = 0.7
+        legend_ncol: int = 3
 
     class Psychrometric:
         """Defaults specific to :class:`PsychrometricPlot`."""
@@ -144,6 +140,18 @@ class _PlotDefaults:
         v_bar_width: float = 0.42
         v_label_x_offset: float = 0.38
 
+
+# ── package-wide Matplotlib style ─────────────────────────────────────────
+
+#: rcParams applied via ``mpl.rc_context`` inside every ``plot()`` call.
+_PYTHERMALCOMFORT_RC: dict[str, Any] = {
+    "legend.frameon": False,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "grid.linestyle": "--",
+    "grid.linewidth": 0.5,
+    "grid.alpha": 0.7,
+}
 
 # ── public configuration ───────────────────────────────────────────────────
 

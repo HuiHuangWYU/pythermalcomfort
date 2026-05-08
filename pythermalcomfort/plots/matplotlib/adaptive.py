@@ -12,6 +12,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
@@ -26,7 +27,11 @@ from pythermalcomfort.models.adaptive_ashrae import SLOPE as _ASHRAE_SLOPE
 from pythermalcomfort.models.adaptive_en import INTERCEPT as _EN_INTERCEPT
 from pythermalcomfort.models.adaptive_en import SLOPE as _EN_SLOPE
 from pythermalcomfort.plots.matplotlib._base import BasePlot
-from pythermalcomfort.plots.matplotlib._shared import BasePlotResult, _PlotDefaults
+from pythermalcomfort.plots.matplotlib._shared import (
+    _PYTHERMALCOMFORT_RC,
+    BasePlotResult,
+    _PlotDefaults,
+)
 from pythermalcomfort.utilities import adaptive_cooling_effect
 
 # ── band specification ─────────────────────────────────────────────────────
@@ -469,95 +474,96 @@ class AdaptivePlot(BasePlot):
         AdaptivePlotResult
             Result with figure, axes, and artists.
         """
-        bands = self._resolve_bands()
+        with mpl.rc_context(_PYTHERMALCOMFORT_RC):
+            bands = self._resolve_bands()
 
-        t_rm = np.linspace(
-            self._t_rm_range[0],
-            self._t_rm_range[1],
-            _PlotDefaults.Adaptive.n_points,
-        )
-        slope: float = self._cfg["slope"]
-        intercept: float = self._cfg["intercept"]
-        t_cmf = slope * t_rm + intercept
-
-        if ax is None:
-            fig, ax = plt.subplots(figsize=_PlotDefaults.figsize)
-        else:
-            fig = ax.figure
-
-        fill_opts = dict(fill_kws or {})
-        fill_opts.setdefault("alpha", _PlotDefaults.fill_alpha)
-
-        fills: list[PolyCollection] = []
-        for band in bands:
-            lower = t_cmf + band.spec.lower_offset
-            upper_base = t_cmf + band.spec.upper_offset
-            upper = upper_base + adaptive_cooling_effect(self._v, upper_base)
-            fill = ax.fill_between(t_rm, lower, upper, color=band.color, **fill_opts)
-            fills.append(fill)
-
-        center_line_artist: Line2D | None = None
-        if show_center_line:
-            cl_opts = dict(_PlotDefaults.Adaptive.center_line_defaults)
-            if center_line_kws:
-                cl_opts.update(center_line_kws)
-            (center_line_artist,) = ax.plot(t_rm, t_cmf, **cl_opts)
-
-        legend_artist: Legend | None = None
-        if legend:
-            lg_opts = dict(legend_kws or {})
-            if title is not None:
-                lg_opts.setdefault("loc", "lower center")
-                lg_opts.setdefault(
-                    "bbox_to_anchor", _PlotDefaults.legend_bbox_to_anchor_with_title
-                )
-            else:
-                lg_opts.setdefault("loc", _PlotDefaults.Adaptive.legend_loc)
-            lg_opts.setdefault("frameon", _PlotDefaults.Adaptive.legend_frameon)
-
-            handles: list[Any] = []
-            for band in reversed(bands):
-                handles.append(
-                    Patch(
-                        facecolor=band.color,
-                        alpha=fill_opts.get("alpha", _PlotDefaults.fill_alpha),
-                        label=band.label,
-                    )
-                )
-            if center_line_artist is not None:
-                handles.append(
-                    Line2D(
-                        [0],
-                        [0],
-                        label=_PlotDefaults.Adaptive.center_line_label,
-                        **dict(_PlotDefaults.Adaptive.center_line_defaults),
-                    )
-                )
-            legend_artist = ax.legend(handles=handles, **lg_opts)
-
-        if grid:
-            ax.grid(
-                True,
-                linestyle=_PlotDefaults.Adaptive.grid_linestyle,
-                linewidth=_PlotDefaults.Adaptive.grid_linewidth,
-                alpha=_PlotDefaults.Adaptive.grid_alpha,
+            t_rm = np.linspace(
+                self._t_rm_range[0],
+                self._t_rm_range[1],
+                _PlotDefaults.Adaptive.n_points,
             )
+            slope: float = self._cfg["slope"]
+            intercept: float = self._cfg["intercept"]
+            t_cmf = slope * t_rm + intercept
 
-        if xlabel is not None:
-            ax.set_xlabel(xlabel)
-        if ylabel is not None:
-            ax.set_ylabel(ylabel)
-        if title is not None:
-            ax.set_title(title, y=_PlotDefaults.title_y_with_legend if legend else None)
+            if ax is None:
+                fig, ax = plt.subplots(figsize=_PlotDefaults.figsize)
+            else:
+                fig = ax.figure
 
-        ax.set_xlim(self._t_rm_range)
-        if self._y_range is not None:
-            ax.set_ylim(self._y_range)
+            fill_opts = dict(fill_kws or {})
+            fill_opts.setdefault("alpha", _PlotDefaults.fill_alpha)
 
-        return AdaptivePlotResult(
-            fig=fig,
-            ax=ax,
-            center_line=center_line_artist,
-            fills=fills,
-            legend=legend_artist,
-        )
+            fills: list[PolyCollection] = []
+            for band in bands:
+                lower = t_cmf + band.spec.lower_offset
+                upper_base = t_cmf + band.spec.upper_offset
+                upper = upper_base + adaptive_cooling_effect(self._v, upper_base)
+                fill = ax.fill_between(
+                    t_rm, lower, upper, color=band.color, **fill_opts
+                )
+                fills.append(fill)
+
+            center_line_artist: Line2D | None = None
+            if show_center_line:
+                cl_opts = dict(_PlotDefaults.Adaptive.center_line_defaults)
+                if center_line_kws:
+                    cl_opts.update(center_line_kws)
+                (center_line_artist,) = ax.plot(t_rm, t_cmf, **cl_opts)
+
+            legend_artist: Legend | None = None
+            if legend:
+                lg_opts = dict(legend_kws or {})
+                if title is not None:
+                    lg_opts.setdefault("loc", "lower center")
+                    lg_opts.setdefault(
+                        "bbox_to_anchor",
+                        _PlotDefaults.legend_bbox_to_anchor_with_title,
+                    )
+                else:
+                    lg_opts.setdefault("loc", _PlotDefaults.Adaptive.legend_loc)
+                lg_opts.setdefault("ncol", _PlotDefaults.Adaptive.legend_ncol)
+
+                handles: list[Any] = []
+                for band in reversed(bands):
+                    handles.append(
+                        Patch(
+                            facecolor=band.color,
+                            alpha=fill_opts.get("alpha", _PlotDefaults.fill_alpha),
+                            label=band.label,
+                        )
+                    )
+                if center_line_artist is not None:
+                    handles.append(
+                        Line2D(
+                            [0],
+                            [0],
+                            label=_PlotDefaults.Adaptive.center_line_label,
+                            **dict(_PlotDefaults.Adaptive.center_line_defaults),
+                        )
+                    )
+                legend_artist = ax.legend(handles=handles, **lg_opts)
+
+            if grid:
+                ax.grid(True)
+
+            if xlabel is not None:
+                ax.set_xlabel(xlabel)
+            if ylabel is not None:
+                ax.set_ylabel(ylabel)
+            if title is not None:
+                ax.set_title(
+                    title, y=_PlotDefaults.title_y_with_legend if legend else None
+                )
+
+            ax.set_xlim(self._t_rm_range)
+            if self._y_range is not None:
+                ax.set_ylim(self._y_range)
+
+            return AdaptivePlotResult(
+                fig=fig,
+                ax=ax,
+                center_line=center_line_artist,
+                fills=fills,
+                legend=legend_artist,
+            )

@@ -174,6 +174,26 @@ defined in ``_PlotDefaults`` inside ``pythermalcomfort/plots/matplotlib/_shared.
 Never embed magic numbers directly inside ``plot()``.  Reference a
 ``_PlotDefaults`` attribute instead.
 
+Matplotlib style (rcParams)
+----------------------------
+
+Global Matplotlib style settings (spine visibility, legend frame, grid style)
+are defined in the module-level dict ``_PYTHERMALCOMFORT_RC`` in ``_shared.py``
+and applied inside every ``plot()`` call via ``mpl.rc_context(_PYTHERMALCOMFORT_RC)``.
+This keeps individual ``plot()`` implementations free of boilerplate style calls.
+
+If you add a new plot class, wrap the body of its ``plot()`` method the same way::
+
+    import matplotlib as mpl
+    from pythermalcomfort.plots.matplotlib._shared import _PYTHERMALCOMFORT_RC
+
+    def plot(self, ...) -> MyPlotResult:
+        with mpl.rc_context(_PYTHERMALCOMFORT_RC):
+            ...
+
+Add new package-wide style settings to ``_PYTHERMALCOMFORT_RC``; add
+plot-specific numeric defaults to a nested ``_PlotDefaults.<ClassName>`` class.
+
 Base class hierarchy (target state)
 =====================================
 

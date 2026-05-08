@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, cast
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
@@ -17,6 +18,7 @@ from matplotlib.patches import Patch
 
 from pythermalcomfort.plots.matplotlib._base import GridBasePlot
 from pythermalcomfort.plots.matplotlib._shared import (
+    _PYTHERMALCOMFORT_RC,
     BasePlotResult,
     _PlotDefaults,
 )
@@ -160,128 +162,132 @@ class ThresholdPlot(GridBasePlot):
             If required configuration is missing, plotting inputs are invalid,
             or model evaluation/output extraction fails.
         """
-        self._validate_plot_inputs(fill_kws=fill_kws)
-        self._validate_invalid_color(invalid_color)
+        with mpl.rc_context(_PYTHERMALCOMFORT_RC):
+            self._validate_plot_inputs(fill_kws=fill_kws)
+            self._validate_invalid_color(invalid_color)
 
-        rc = self._region_config
+            rc = self._region_config
 
-        line_opts = dict(line_kws or {})
-        line_opts.setdefault("color", _PlotDefaults.Threshold.line_color)
-        line_opts.setdefault("linewidth", _PlotDefaults.Threshold.line_linewidth)
+            line_opts = dict(line_kws or {})
+            line_opts.setdefault("color", _PlotDefaults.Threshold.line_color)
+            line_opts.setdefault("linewidth", _PlotDefaults.Threshold.line_linewidth)
 
-        fill_opts = dict(fill_kws or {})
-        fill_opts.setdefault("corner_mask", _PlotDefaults.Threshold.fill_corner_mask)
-
-        legend_opts = dict(legend_kws or {})
-        legend_opts.setdefault("loc", _PlotDefaults.Threshold.legend_loc)
-        legend_opts.setdefault(
-            "bbox_to_anchor",
-            _PlotDefaults.legend_bbox_to_anchor_with_title
-            if title is not None
-            else _PlotDefaults.Threshold.legend_bbox_to_anchor,
-        )
-        legend_opts.setdefault("frameon", _PlotDefaults.Threshold.legend_frameon)
-
-        if ax is None:
-            fig, ax = plt.subplots(figsize=_PlotDefaults.figsize)
-        else:
-            fig = ax.figure
-
-        x_min, x_max, y_min, y_max, x, y = self._build_grid()
-        z = self._evaluate_grid_output(x=x, y=y, output_name=rc.output_name)
-
-        finite = np.isfinite(z)
-        invalid = ~finite
-        z_masked = np.ma.masked_invalid(z)
-
-        extended_levels = [-np.inf, *rc.thresholds, np.inf]
-        fills: list[PolyCollection] = []
-        if finite.any():
-            filled_contours = ax.contourf(
-                x,
-                y,
-                z_masked,
-                levels=extended_levels,
-                colors=rc.colors,
-                extend="neither",
-                **fill_opts,
+            fill_opts = dict(fill_kws or {})
+            fill_opts.setdefault(
+                "corner_mask", _PlotDefaults.Threshold.fill_corner_mask
             )
 
-            if hasattr(filled_contours, "collections"):
-                fills.extend(
-                    cast(list[PolyCollection], list(filled_contours.collections))
-                )
-            else:
-                fills.append(cast(PolyCollection, filled_contours))
-
-        if invalid.any():
-            invalid_cells = (
-                invalid[:-1, :-1]
-                | invalid[1:, :-1]
-                | invalid[:-1, 1:]
-                | invalid[1:, 1:]
-            )
-            invalid_mask = np.ma.masked_where(
-                ~invalid_cells,
-                np.ones_like(invalid_cells, dtype=float),
-            )
-            ax.pcolormesh(
-                x,
-                y,
-                invalid_mask,
-                cmap=ListedColormap([invalid_color]),
-                shading="flat",
-                zorder=_PlotDefaults.Threshold.zorder_invalid,
-            )
-
-        lines: list[Line2D] = []
-        if show_lines and finite.any():
-            contour_lines = ax.contour(
-                x, y, z_masked, levels=rc.thresholds, antialiased=True
-            )
-            lines = _contour_paths_to_lines(
-                ax,
-                contour_set=contour_lines,
-                line_opts=line_opts,
-            )
-
-        legend_artist: Legend | None = None
-        if legend:
-            handles = [
-                Patch(
-                    facecolor=color,
-                    alpha=fill_opts.get("alpha", _PlotDefaults.fill_alpha),
-                    label=label,
-                )
-                for label, color in zip(rc.labels, rc.colors, strict=False)
-            ]
-            if invalid.any():
-                handles.append(
-                    Patch(
-                        facecolor=invalid_color,
-                        alpha=1.0,
-                        label="Out of model limits",
-                    )
-                )
+            legend_opts = dict(legend_kws or {})
+            legend_opts.setdefault("loc", _PlotDefaults.Threshold.legend_loc)
             legend_opts.setdefault(
-                "ncol", min(len(handles), _PlotDefaults.Threshold.legend_ncol_max)
-            )
-            legend_artist = ax.legend(
-                handles=handles,
-                **legend_opts,
+                "bbox_to_anchor",
+                _PlotDefaults.legend_bbox_to_anchor_with_title
+                if title is not None
+                else _PlotDefaults.Threshold.legend_bbox_to_anchor,
             )
 
-        ax.set_xlim(x_min, x_max)
-        ax.set_ylim(y_min, y_max)
-        ax.set_xlabel(self._x_axis.name)
-        ax.set_ylabel(self._y_axis.name)
-        if title is not None:
-            ax.set_title(title, y=_PlotDefaults.title_y_with_legend if legend else None)
+            if ax is None:
+                fig, ax = plt.subplots(figsize=_PlotDefaults.figsize)
+            else:
+                fig = ax.figure
 
-        return ThresholdPlotResult(
-            fig=fig,
-            ax=ax,
-            lines=lines,
-            fills=fills,
-            legend=legend_artist,
-        )
+            x_min, x_max, y_min, y_max, x, y = self._build_grid()
+            z = self._evaluate_grid_output(x=x, y=y, output_name=rc.output_name)
+
+            finite = np.isfinite(z)
+            invalid = ~finite
+            z_masked = np.ma.masked_invalid(z)
+
+            extended_levels = [-np.inf, *rc.thresholds, np.inf]
+            fills: list[PolyCollection] = []
+            if finite.any():
+                filled_contours = ax.contourf(
+                    x,
+                    y,
+                    z_masked,
+                    levels=extended_levels,
+                    colors=rc.colors,
+                    extend="neither",
+                    **fill_opts,
+                )
+
+                if hasattr(filled_contours, "collections"):
+                    fills.extend(
+                        cast(list[PolyCollection], list(filled_contours.collections))
+                    )
+                else:
+                    fills.append(cast(PolyCollection, filled_contours))
+
+            if invalid.any():
+                invalid_cells = (
+                    invalid[:-1, :-1]
+                    | invalid[1:, :-1]
+                    | invalid[:-1, 1:]
+                    | invalid[1:, 1:]
+                )
+                invalid_mask = np.ma.masked_where(
+                    ~invalid_cells,
+                    np.ones_like(invalid_cells, dtype=float),
+                )
+                ax.pcolormesh(
+                    x,
+                    y,
+                    invalid_mask,
+                    cmap=ListedColormap([invalid_color]),
+                    shading="flat",
+                    zorder=_PlotDefaults.Threshold.zorder_invalid,
+                )
+
+            lines: list[Line2D] = []
+            if show_lines and finite.any():
+                contour_lines = ax.contour(
+                    x, y, z_masked, levels=rc.thresholds, antialiased=True
+                )
+                lines = _contour_paths_to_lines(
+                    ax,
+                    contour_set=contour_lines,
+                    line_opts=line_opts,
+                )
+
+            legend_artist: Legend | None = None
+            if legend:
+                handles = [
+                    Patch(
+                        facecolor=color,
+                        alpha=fill_opts.get("alpha", _PlotDefaults.fill_alpha),
+                        label=label,
+                    )
+                    for label, color in zip(rc.labels, rc.colors, strict=False)
+                ]
+                if invalid.any():
+                    handles.append(
+                        Patch(
+                            facecolor=invalid_color,
+                            alpha=1.0,
+                            label="Out of model limits",
+                        )
+                    )
+                legend_opts.setdefault(
+                    "ncol", min(len(handles), _PlotDefaults.Threshold.legend_ncol_max)
+                )
+                legend_artist = ax.legend(
+                    handles=handles,
+                    **legend_opts,
+                )
+
+            ax.set_xlim(x_min, x_max)
+            ax.set_ylim(y_min, y_max)
+            ax.set_xlabel(self._x_axis.name)
+            ax.set_ylabel(self._y_axis.name)
+            if title is not None:
+                ax.set_title(
+                    title, y=_PlotDefaults.title_y_with_legend if legend else None
+                )
+
+            return ThresholdPlotResult(
+                fig=fig,
+                ax=ax,
+                lines=lines,
+                fills=fills,
+                legend=legend_artist,
+            )

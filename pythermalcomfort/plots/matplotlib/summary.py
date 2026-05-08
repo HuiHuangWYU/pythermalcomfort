@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -13,6 +14,7 @@ from matplotlib.axes import Axes
 
 from pythermalcomfort.plots.matplotlib._base import BasePlot
 from pythermalcomfort.plots.matplotlib._shared import (
+    _PYTHERMALCOMFORT_RC,
     BasePlotResult,
     ThresholdsConfig,
     _is_light_color,
@@ -393,40 +395,41 @@ class SummaryPlot(BasePlot):
         ValueError
             If regions are not configured first via :meth:`set_regions`.
         """
-        if self._region_config is None:
-            raise ValueError(
-                "Regions are not set. Call set_regions(...) before plot(...)."
+        with mpl.rc_context(_PYTHERMALCOMFORT_RC):
+            if self._region_config is None:
+                raise ValueError(
+                    "Regions are not set. Call set_regions(...) before plot(...)."
+                )
+            rc = self._region_config
+
+            if ax is None:
+                fig, ax = plt.subplots(figsize=_PlotDefaults.figsize)
+            else:
+                fig = ax.figure
+
+            label_column = f"{rc.output_name}_label"
+            df_copy = self._df.copy()
+            df_copy, region_percentages = _categorize_output_values(
+                df_copy,
+                output_column=rc.output_name,
+                label_column=label_column,
+                levels=rc.thresholds,
+                region_labels=rc.labels,
             )
-        rc = self._region_config
 
-        if ax is None:
-            fig, ax = plt.subplots(figsize=_PlotDefaults.figsize)
-        else:
-            fig = ax.figure
+            _prepare_axis(ax, title=title)
+            artists = _plot_summary(
+                ax,
+                vertical=vertical,
+                region_percentages=region_percentages,
+                region_labels=rc.labels,
+                region_colors=rc.colors,
+            )
 
-        label_column = f"{rc.output_name}_label"
-        df_copy = self._df.copy()
-        df_copy, region_percentages = _categorize_output_values(
-            df_copy,
-            output_column=rc.output_name,
-            label_column=label_column,
-            levels=rc.thresholds,
-            region_labels=rc.labels,
-        )
-
-        _prepare_axis(ax, title=title)
-        artists = _plot_summary(
-            ax,
-            vertical=vertical,
-            region_percentages=region_percentages,
-            region_labels=rc.labels,
-            region_colors=rc.colors,
-        )
-
-        return SummaryPlotResult(
-            fig=fig,
-            ax=ax,
-            data=df_copy,
-            region_percentages=region_percentages,
-            artists=artists,
-        )
+            return SummaryPlotResult(
+                fig=fig,
+                ax=ax,
+                data=df_copy,
+                region_percentages=region_percentages,
+                artists=artists,
+            )
