@@ -99,11 +99,11 @@ def pmv_ppd_ashrae(
 
     Returns
     -------
-    PMVPPD
+    PMVPPDAshrae
         A dataclass containing the Predicted Mean Vote and Predicted Percentage of
-        Dissatisfied. See :py:class:`~pythermalcomfort.classes_return.PMVPPD` for
+        Dissatisfied. See :py:class:`~pythermalcomfort.classes_return.PMVPPDAshrae` for
         more details. To access the `pmv`, `ppd`, `tsv`, and `compliance` values, use the corresponding
-        attributes of the returned `PMVPPD` instance, e.g., `result.pmv`, `result.compliance`.
+        attributes of the returned `PMVPPDAshrae` instance, e.g., `result.pmv`, `result.compliance`.
 
     Examples
     --------

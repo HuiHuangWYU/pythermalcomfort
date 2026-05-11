@@ -441,7 +441,8 @@ class PMVPPDAshrae(PMVPPD):
         Predicted thermal sensation vote.
     compliance : bool or list of bools
         True if PMV is within the acceptable range (-0.5 < PMV < 0.5) according to
-        ASHRAE Standard 55-2023.
+        ASHRAE Standard 55-2023. When ``limit_inputs=True`` and any input is outside
+        the standard applicability limits, ``compliance`` will be ``nan``.
     """
 
     compliance: bool | list[bool]
