@@ -125,6 +125,7 @@ def vertical_tmp_grad_ppd(
         met=met,
         clo=clo,
         model=Models.ashrae_55_2023.value,
+        limit_inputs=False,
     ).pmv
     numerator = np.exp(0.13 * (tsv - 1.91) ** 2 + 0.15 * vertical_tmp_grad - 1.6)
     ppd_val = (numerator / (1 + numerator) - 0.345) * 100

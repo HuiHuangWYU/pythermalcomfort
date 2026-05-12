@@ -111,12 +111,16 @@ def ankle_draft(
     if units.upper() == Units.IP.value:
         tdb, tr, vr, v_ankle = units_converter(tdb=tdb, tr=tr, vr=vr, vel=v_ankle)
 
-    tdb_valid, tr_valid, v_valid, v_limited = _check_standard_compliance_array(
-        standard=Models.ashrae_55_2023.value,
-        tdb=tdb,
-        tr=tr,
-        v_limited=vr,
-        v=vr,
+    tdb_valid, tr_valid, v_valid, met_valid, clo_valid, v_limited = (
+        _check_standard_compliance_array(
+            standard=Models.ashrae_55_2023.value,
+            tdb=tdb,
+            tr=tr,
+            v_limited=vr,
+            v=vr,
+            met=met,
+            clo=clo,
+        )
     )
 
     if np.all(np.isnan(v_limited)):
@@ -132,6 +136,7 @@ def ankle_draft(
         met,
         clo,
         model=Models.ashrae_55_2023.value,
+        limit_inputs=False,
     ).pmv
     ppd_val = np.around(
         np.exp(-2.58 + 3.05 * v_ankle - 1.06 * tsv)
@@ -140,4 +145,15 @@ def ankle_draft(
         1,
     )
     acceptability = ppd_val <= 20
+
+    all_valid = ~(
+        np.isnan(tdb_valid)
+        | np.isnan(tr_valid)
+        | np.isnan(v_valid)
+        | np.isnan(met_valid)
+        | np.isnan(clo_valid)
+    )
+    ppd_val = np.where(all_valid, ppd_val, np.nan)
+    acceptability = np.where(all_valid, acceptability, np.nan)
+
     return AnkleDraft(ppd_ad=ppd_val, acceptability=acceptability)
