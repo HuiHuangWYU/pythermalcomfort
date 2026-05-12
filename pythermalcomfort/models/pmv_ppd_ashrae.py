@@ -173,8 +173,28 @@ def pmv_ppd_ashrae(
         )
         raise ValueError(error_msg)
 
-    # Checks that inputs are within the bounds accepted by the model if not return nan
-    # Must be done before CE correction to use the original input values
+    # if v_r is higher than 0.1 follow methodology ASHRAE Appendix H, H3
+    ce = np.where(
+        vr > 0.1,
+        cooling_effect(tdb=tdb, tr=tr, vr=vr, rh=rh, met=met, clo=clo, wme=wme).ce,
+        0.0,
+    )
+
+    tdb_ce = tdb - ce
+    tr_ce = tr - ce
+    vr_ce = np.where(ce > 0, 0.1, vr)
+
+    pmv_array = _pmv_ppd_optimized(tdb_ce, tr_ce, vr_ce, rh, met, clo, wme)
+
+    ppd_array = 100.0 - 95.0 * np.exp(
+        -0.03353 * pmv_array**4.0 - 0.2179 * pmv_array**2.0,
+    )
+
+    # Calculate compliance: True if -0.5 < PMV < 0.5
+    compliance_array = (pmv_array > -0.5) & (pmv_array < 0.5)
+    # Ensure object dtype for compliance array
+    compliance_array = np.asarray(compliance_array, dtype=object)
+
     if limit_inputs:
         (
             tdb_valid,
@@ -191,30 +211,6 @@ def pmv_ppd_ashrae(
             clo=clo,
             airspeed_control=airspeed_control,
         )
-
-    # if v_r is higher than 0.1 follow methodology ASHRAE Appendix H, H3
-    ce = np.where(
-        vr > 0.1,
-        cooling_effect(tdb=tdb, tr=tr, vr=vr, rh=rh, met=met, clo=clo, wme=wme).ce,
-        0.0,
-    )
-
-    tdb = tdb - ce
-    tr = tr - ce
-    vr = np.where(ce > 0, 0.1, vr)
-
-    pmv_array = _pmv_ppd_optimized(tdb, tr, vr, rh, met, clo, wme)
-
-    ppd_array = 100.0 - 95.0 * np.exp(
-        -0.03353 * pmv_array**4.0 - 0.2179 * pmv_array**2.0,
-    )
-
-    # Calculate compliance: True if -0.5 < PMV < 0.5
-    compliance_array = (pmv_array > -0.5) & (pmv_array < 0.5)
-    # Ensure object dtype for compliance array
-    compliance_array = np.asarray(compliance_array, dtype=object)
-
-    if limit_inputs:
         all_valid = ~(
             np.isnan(tdb_valid)
             | np.isnan(tr_valid)
