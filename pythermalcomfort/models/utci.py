@@ -120,6 +120,9 @@ def utci(
         all_valid = ~(np.isnan(tdb_valid) | np.isnan(diff_valid) | np.isnan(v_valid))
         utci_approx = np.where(all_valid, utci_approx, np.nan)
 
+    # Stress-category thresholds are in °C; keep the SI value before IP conversion.
+    utci_si = utci_approx
+
     if units.upper() == Units.IP.value:
         utci_approx = units_converter(
             tmp=utci_approx,
@@ -141,10 +144,11 @@ def utci(
 
     if round_output:
         utci_approx = np.round(utci_approx, 1)
+        utci_si = np.round(utci_si, 1)
 
     return UTCI(
         utci=utci_approx,
-        stress_category=mapping(utci_approx, stress_categories),
+        stress_category=mapping(utci_si, stress_categories),
     )
 
 
