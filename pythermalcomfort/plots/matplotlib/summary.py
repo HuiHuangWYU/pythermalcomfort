@@ -331,6 +331,7 @@ class SummaryPlot(BasePlot):
         vertical: bool = False,
         legend: bool = True,
         legend_kws: Mapping[str, Any] | None = None,
+        # fixme missing bar kwargs
     ) -> SummaryPlotResult:
         """Render a threshold summary plot for the configured output column.
 

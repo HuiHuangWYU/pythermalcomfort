@@ -106,6 +106,7 @@ class _PlotDefaults:
             "linestyle": "--",
         }
         legend_loc: str = "lower right"
+        # fixme the legend height in this plot is not the same as in the psychrometric chart
         legend_ncol: int = 3
 
     class Psychrometric:
