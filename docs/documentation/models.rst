@@ -259,8 +259,7 @@ ASHRAE 55 - PMV and PPD
 
 .. autofunction:: pythermalcomfort.models.pmv_ppd_ashrae.pmv_ppd_ashrae
 
-.. autoclass:: pythermalcomfort.classes_return.PMVPPD
-    :noindex:
+.. autoclass:: pythermalcomfort.classes_return.PMVPPDAshrae
     :members:
 
 Adaptive Predicted Mean Vote (aPMV)

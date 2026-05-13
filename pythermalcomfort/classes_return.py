@@ -419,15 +419,33 @@ class PMVPPD(AutoStrMixin):
         Predicted Percentage of Dissatisfied.
     tsv : str or list of strings
         Predicted thermal sensation vote.
-    compliance : bool or list of bools, optional
-        True if PMV is within the acceptable range (-0.5 < PMV < 0.5) according to
-        ASHRAE Standard 55-2023. Only returned by pmv_ppd_ashrae function.
     """
 
     pmv: float | list[float]
     ppd: float | list[float]
     tsv: float | list[float]
-    compliance: bool | list[bool] | None = None
+
+
+@dataclass(frozen=True, repr=False)
+class PMVPPDAshrae(PMVPPD):
+    """Dataclass to represent the Predicted Mean Vote (PMV) and Predicted Percentage of
+    Dissatisfied (PPD) calculated in accordance with ASHRAE Standard 55.
+
+    Attributes
+    ----------
+    pmv : float or list of floats
+        Predicted Mean Vote.
+    ppd : float or list of floats
+        Predicted Percentage of Dissatisfied.
+    tsv : str or list of strings
+        Predicted thermal sensation vote.
+    compliance : bool or list of bools
+        True if PMV is within the acceptable range (-0.5 < PMV < 0.5) according to
+        ASHRAE Standard 55-2023. When ``limit_inputs=True`` and any input is outside
+        the standard applicability limits, ``compliance`` will be ``nan``.
+    """
+
+    compliance: bool | list[bool]
 
 
 @dataclass(frozen=True, repr=False)
