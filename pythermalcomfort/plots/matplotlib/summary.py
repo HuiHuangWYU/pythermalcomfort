@@ -176,7 +176,7 @@ def _plot_summary(
     artists: list[Any] = []
 
     if vertical:
-        ax.set_xlim(*D.v_xlim)
+        ax.set_xlim(*(D.v_xlim if show_region_labels else D.v_xlim_legend))
         ax.set_ylim(*D.v_ylim)
     else:
         ax.set_xlim(*D.h_xlim)

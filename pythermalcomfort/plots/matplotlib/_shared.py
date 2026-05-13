@@ -131,16 +131,17 @@ class _PlotDefaults:
         label_fontsize: int = 11
         pct_min_to_show: float = 5.0
         h_xlim: tuple = (0.0, 100.0)
-        h_ylim: tuple = (-0.6, 0.6)
-        h_ylim_legend: tuple = (-1, 0.3)  # tighter top when legend handles labels
+        h_ylim: tuple = (-0.48, 0.72)  # with side labels: bar at 60% of height
+        h_ylim_legend: tuple = (-0.48, 0.48)  # legend handles labels: bar at ~75%
         h_bar_y: float = 0.0
-        h_bar_height: float = 0.36
-        h_label_y: float = 0.34
-        v_xlim: tuple = (-0.75, 0.9)
+        h_bar_height: float = 0.72  # bar fills most of the vertical span
+        h_label_y: float = 0.38  # sits just above bar top (0.36)
+        v_xlim: tuple = (-0.50, 0.90)  # with side labels
+        v_xlim_legend: tuple = (-0.50, 0.50)  # legend handles labels: bar at ~80%
         v_ylim: tuple = (0.0, 100.0)
         v_bar_x: float = 0.0
-        v_bar_width: float = 0.42
-        v_label_x_offset: float = 0.38
+        v_bar_width: float = 0.80  # bar fills most of the horizontal span
+        v_label_x_offset: float = 0.42  # just past bar right edge (0.40)
 
 
 # ── package-wide Matplotlib style ─────────────────────────────────────────
