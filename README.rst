@@ -72,8 +72,8 @@ Requirements
 ============
 
 - Python 3.10+
-- NumPy, SciPy, pandas (installed automatically)
-- Optional: Matplotlib or other plotting libraries for visualizations
+- NumPy, SciPy, Numba, setuptools (installed automatically)
+- Optional: pandas, Matplotlib, or other plotting libraries for examples and visualizations
 
 Quick Start
 ===========
