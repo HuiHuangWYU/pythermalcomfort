@@ -74,7 +74,8 @@ Runtime dependencies (installed automatically via pip):
 
 - numpy
 - scipy
-- pandas
+- numba
+- setuptools
 
 Development extras (used by maintainers and contributors):
 
@@ -84,6 +85,11 @@ Development extras (used by maintainers and contributors):
 - pytest (testing)
 
 If you installed via ``pip install -e .[dev]`` these will be installed for you.
+
+Some docstring examples and notebooks also use ``pandas`` and
+``matplotlib``. These are not required to use the package and are not
+installed by ``pip install pythermalcomfort``; install them only if you
+want to run those examples.
 
 Verifying the installation
 ==========================
