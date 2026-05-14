@@ -477,14 +477,8 @@ class AdaptivePlot(BasePlot):
         with mpl.rc_context(_PYTHERMALCOMFORT_RC):
             bands = self._resolve_bands()
 
-            t_rm = np.linspace(
-                self._t_rm_range[0],
-                self._t_rm_range[1],
-                _PlotDefaults.Adaptive.n_points,
-            )
             slope: float = self._cfg["slope"]
             intercept: float = self._cfg["intercept"]
-            t_cmf = slope * t_rm + intercept
 
             if ax is None:
                 fig, ax = plt.subplots(figsize=_PlotDefaults.figsize)
@@ -494,14 +488,43 @@ class AdaptivePlot(BasePlot):
             fill_opts = dict(fill_kws or {})
             fill_opts.setdefault("alpha", _PlotDefaults.fill_alpha)
 
+            slope: float = self._cfg["slope"]
+            intercept: float = self._cfg["intercept"]
+            t_lo, t_hi = self._t_rm_range
+
+            ce = adaptive_cooling_effect(self._v, np.array([26.0]))[0]
+
             fills: list[PolyCollection] = []
             for band in bands:
-                lower = t_cmf + band.spec.lower_offset
-                upper_base = t_cmf + band.spec.upper_offset
-                upper = upper_base + adaptive_cooling_effect(self._v, upper_base)
-                fill = ax.fill_between(
-                    t_rm, lower, upper, color=band.color, **fill_opts
-                )
+                t_rm_transition = (25.0 - intercept - band.spec.upper_offset) / slope
+
+                has_transition = ce > 0.0 and t_lo < t_rm_transition < t_hi
+
+                if has_transition:
+                    # 4 points: start, transition(no ce), transition(with ce), end
+                    x = np.array([t_lo, t_rm_transition, t_rm_transition, t_hi])
+                else:
+                    # 2 points: start, end
+                    x = np.array([t_lo, t_hi])
+
+                t_cmf_at_x = slope * x + intercept
+                lower = t_cmf_at_x + band.spec.lower_offset
+                upper_base = t_cmf_at_x + band.spec.upper_offset
+
+                if has_transition:
+                    # [no ce, no ce, with ce, with ce]
+                    upper = np.array(
+                        [
+                            upper_base[0],
+                            25.0,
+                            25.0 + ce,
+                            upper_base[3] + ce,
+                        ]
+                    )
+                else:
+                    upper = upper_base + adaptive_cooling_effect(self._v, upper_base)
+
+                fill = ax.fill_between(x, lower, upper, color=band.color, **fill_opts)
                 fills.append(fill)
 
             center_line_artist: Line2D | None = None
@@ -509,7 +532,10 @@ class AdaptivePlot(BasePlot):
                 cl_opts = dict(_PlotDefaults.Adaptive.center_line_defaults)
                 if center_line_kws:
                     cl_opts.update(center_line_kws)
-                (center_line_artist,) = ax.plot(t_rm, t_cmf, **cl_opts)
+                t_lo, t_hi = self._t_rm_range
+                x = [t_lo, t_hi]
+                y = [slope * t_lo + intercept, slope * t_hi + intercept]
+                (center_line_artist,) = ax.plot(x, y, **cl_opts)
 
             legend_artist: Legend | None = None
             if legend:
