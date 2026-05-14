@@ -488,13 +488,14 @@ class AdaptivePlot(BasePlot):
             fill_opts = dict(fill_kws or {})
             fill_opts.setdefault("alpha", _PlotDefaults.fill_alpha)
 
+            slope: float = self._cfg["slope"]
+            intercept: float = self._cfg["intercept"]
+            t_lo, t_hi = self._t_rm_range
+
+            ce = adaptive_cooling_effect(self._v, np.array([26.0]))[0]
+
             fills: list[PolyCollection] = []
             for band in bands:
-                slope: float = self._cfg["slope"]
-                intercept: float = self._cfg["intercept"]
-                t_lo, t_hi = self._t_rm_range
-
-                ce = adaptive_cooling_effect(self._v, np.array([26.0]))[0]
                 t_rm_transition = (25.0 - intercept - band.spec.upper_offset) / slope
 
                 has_transition = ce > 0.0 and t_lo < t_rm_transition < t_hi
