@@ -1082,9 +1082,9 @@ class ScaleWindSpeedLogInputs(BaseInputs):
         self,
         v_z1,
         z2,
-        z1: float | int | np.ndarray | list = 10.0,
-        z0: float | int | np.ndarray | list = 0.01,
-        d: float | int | np.ndarray | list = 0.0,
+        z1: NumericInput = 10.0,
+        z0: NumericInput = 0.01,
+        d: NumericInput = 0.0,
     ):
         super().__init__(
             v_z1=v_z1,
@@ -1203,10 +1203,10 @@ class SportsHeatStressInputs(BaseInputs):
 
     def __init__(
         self,
-        tdb: float | int | np.ndarray | list,
-        tr: float | int | np.ndarray | list,
-        rh: float | int | np.ndarray | list,
-        vr: float | int | np.ndarray | list,
+        tdb: NumericInput,
+        tr: NumericInput,
+        rh: NumericInput,
+        vr: NumericInput,
         sport: _SportsValues,
     ):
         # Store sport before calling super().__init__() as it's not a BaseInputs field
