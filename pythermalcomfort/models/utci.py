@@ -46,7 +46,7 @@ def utci(
         By default, if the inputs are outside the standard applicability limits the
         function returns nan. If False, returns UTCI values even if input values are
         outside the applicability limits of the model. The valid input ranges are
-        -50 < tdb [°C] < 50, tdb - 70 < tr [°C] < tdb + 30, and for 0.5 < v [m/s] < 17.0. Defaults to True.
+        -50 < tdb [°C] < 50, tdb - 30 < tr [°C] < tdb + 70, and for 0.5 < v [m/s] < 17.0. Defaults to True.
     round_output : bool, optional
         If True, rounds output value. If False, it does not round it. Defaults to True.
 
