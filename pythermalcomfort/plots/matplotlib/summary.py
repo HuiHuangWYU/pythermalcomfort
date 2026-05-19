@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 from matplotlib.patches import Patch
 
@@ -21,6 +22,22 @@ from pythermalcomfort.plots.matplotlib._shared import (
     _is_light_color,
     _PlotDefaults,
 )
+
+_SUMMARY_LAYOUT_PAD: float = 0.2
+_SUMMARY_LEGEND_NCOL_MAX: int = 3
+_SUMMARY_TITLE_LEGEND_GAP: float = 5.0
+_SUMMARY_TITLE_SPACING_ITERATIONS: int = 3
+_SUMMARY_VERTICAL_LEGEND_NCOL: int = 1
+_SUMMARY_BAR_KWS_RESERVED: set[str] = {
+    "bottom",
+    "color",
+    "facecolor",
+    "height",
+    "left",
+    "width",
+    "x",
+    "y",
+}
 
 # ── result container ───────────────────────────────────────────────────────
 
@@ -92,6 +109,22 @@ def _validate_output_values(df: pd.DataFrame, output_column: str) -> None:
         raise ValueError(msg)
 
 
+def _validate_bar_kws(bar_kws: Mapping[str, Any] | None) -> None:
+    """Validate direct Matplotlib bar keyword overrides."""
+    if bar_kws is None:
+        return
+
+    reserved = sorted(_SUMMARY_BAR_KWS_RESERVED.intersection(bar_kws))
+    if reserved:
+        reserved_str = ", ".join(f"'{key}'" for key in reserved)
+        msg = (
+            f"bar_kws cannot include {reserved_str}. "
+            "Use set_regions(..., colors=...) for segment colors; bar geometry "
+            "is managed by SummaryPlot."
+        )
+        raise ValueError(msg)
+
+
 # ── categorization ─────────────────────────────────────────────────────────
 
 
@@ -135,6 +168,65 @@ def _prepare_axis(ax: Axes) -> None:
         spine.set_visible(False)
 
 
+def _should_show_region_labels(*, legend: bool, region_labels: Sequence[str]) -> bool:
+    """Return whether region labels should be drawn next to the bar."""
+    return not legend and any(label.strip() for label in region_labels)
+
+
+def _summary_figsize(
+    *,
+    vertical: bool,
+    legend: bool,
+    show_region_labels: bool,
+) -> tuple[float, float]:
+    """Return compact default figure size for standalone summary plots."""
+    if vertical:
+        if show_region_labels:
+            return (3.2, 4.0)
+        return (2.8, 4.0) if legend else (2.2, 4.0)
+
+    if legend:
+        return (6.4, 1.8)
+    return (6.4, 1.4) if show_region_labels else (6.4, 1.1)
+
+
+def _apply_compact_layout(fig: Figure) -> None:
+    """Trim default Matplotlib margins for standalone summary figures."""
+    fig.tight_layout(pad=_SUMMARY_LAYOUT_PAD)
+
+
+def _ensure_title_legend_spacing(
+    fig: Figure,
+    ax: Axes,
+    legend: Legend | None,
+    *,
+    adjust_layout: bool,
+) -> None:
+    """Keep the title above the legend with only the measured gap needed."""
+    if legend is None or not ax.get_title():
+        return
+
+    min_gap_px = _SUMMARY_TITLE_LEGEND_GAP * fig.dpi / 72
+    for _ in range(_SUMMARY_TITLE_SPACING_ITERATIONS):
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
+        title_bbox = ax.title.get_window_extent(renderer)
+        legend_bbox = legend.get_window_extent(renderer)
+        current_gap_px = title_bbox.y0 - legend_bbox.y1
+        if current_gap_px >= min_gap_px:
+            return
+
+        axes_height_px = ax.get_window_extent(renderer).height
+        if axes_height_px <= 0:
+            return
+
+        _, title_y = ax.title.get_position()
+        y_adjustment = (min_gap_px - current_gap_px) / axes_height_px
+        ax.title.set_y(title_y + y_adjustment)
+        if adjust_layout:
+            _apply_compact_layout(fig)
+
+
 # ── annotation helper ─────────────────────────────────────────────────────
 
 
@@ -170,10 +262,14 @@ def _plot_summary(
     region_labels: Sequence[str],
     region_colors: Sequence[str],
     show_region_labels: bool,
+    bar_kws: Mapping[str, Any],
 ) -> list[Any]:
     """Render a stacked summary bar (horizontal or vertical) with annotations."""
     D = _PlotDefaults.Summary
     artists: list[Any] = []
+    bar_opts = dict(bar_kws)
+    bar_opts.setdefault("edgecolor", D.bar_edgecolor)
+    bar_opts.setdefault("linewidth", D.bar_linewidth)
 
     if vertical:
         ax.set_xlim(*(D.v_xlim if show_region_labels else D.v_xlim_legend))
@@ -194,8 +290,7 @@ def _plot_summary(
                 width=D.v_bar_width,
                 bottom=cumulative,
                 color=color,
-                edgecolor=D.bar_edgecolor,
-                linewidth=D.bar_linewidth,
+                **bar_opts,
             )
         else:
             bar = ax.barh(
@@ -204,8 +299,7 @@ def _plot_summary(
                 left=cumulative,
                 height=D.h_bar_height,
                 color=color,
-                edgecolor=D.bar_edgecolor,
-                linewidth=D.bar_linewidth,
+                **bar_opts,
             )
         artists.append(bar)
 
@@ -246,6 +340,13 @@ def _plot_summary(
         cumulative += value
 
     return artists
+
+
+def _default_legend_ncol(*, vertical: bool, n_labels: int) -> int:
+    """Return a compact default legend column count."""
+    if vertical:
+        return _SUMMARY_VERTICAL_LEGEND_NCOL
+    return min(n_labels, _SUMMARY_LEGEND_NCOL_MAX)
 
 
 # ── public API ─────────────────────────────────────────────────────────────
@@ -330,8 +431,8 @@ class SummaryPlot(BasePlot):
         title: str | None = None,
         vertical: bool = False,
         legend: bool = True,
+        bar_kws: Mapping[str, Any] | None = None,
         legend_kws: Mapping[str, Any] | None = None,
-        # fixme missing bar kwargs
     ) -> SummaryPlotResult:
         """Render a threshold summary plot for the configured output column.
 
@@ -339,7 +440,7 @@ class SummaryPlot(BasePlot):
         ----------
         ax : Axes, optional
             Existing axis to draw on.  If ``None``, a new figure/axis is created
-            with a default size of ``(7, 4)`` inches.
+            with a compact default size for the selected orientation.
         title : str, optional
             Optional axis title.  When both *title* and *legend* are shown the
             legend sits just above the chart and the title floats above it,
@@ -349,6 +450,10 @@ class SummaryPlot(BasePlot):
         legend : bool
             Whether to draw a colour-coded legend above the bar.  When
             ``True``, region labels are omitted from the bar itself.
+        bar_kws : dict, optional
+            Keyword overrides forwarded to ``ax.bar`` or ``ax.barh`` for the
+            stacked bar segments.  Segment colours and bar geometry are managed
+            by ``SummaryPlot``.
         legend_kws : dict, optional
             Keyword overrides forwarded to ``ax.legend``.
 
@@ -368,9 +473,21 @@ class SummaryPlot(BasePlot):
                     "Regions are not set. Call set_regions(...) before plot(...)."
                 )
             rc = self._region_config
+            _validate_bar_kws(bar_kws)
+            show_region_labels = _should_show_region_labels(
+                legend=legend,
+                region_labels=rc.labels,
+            )
+            created_figure = ax is None
 
-            if ax is None:
-                fig, ax = plt.subplots(figsize=_PlotDefaults.figsize)
+            if created_figure:
+                fig, ax = plt.subplots(
+                    figsize=_summary_figsize(
+                        vertical=vertical,
+                        legend=legend,
+                        show_region_labels=show_region_labels,
+                    )
+                )
             else:
                 fig = ax.figure
 
@@ -388,7 +505,8 @@ class SummaryPlot(BasePlot):
                 region_percentages=percentages,
                 region_labels=rc.labels,
                 region_colors=rc.colors,
-                show_region_labels=not legend,
+                show_region_labels=show_region_labels,
+                bar_kws=bar_kws or {},
             )
 
             legend_artist: Legend | None = None
@@ -402,7 +520,8 @@ class SummaryPlot(BasePlot):
                     else _PlotDefaults.Threshold.legend_bbox_to_anchor,
                 )
                 lg_opts.setdefault(
-                    "ncol", min(len(rc.labels), _PlotDefaults.Threshold.legend_ncol_max)
+                    "ncol",
+                    _default_legend_ncol(vertical=vertical, n_labels=len(rc.labels)),
                 )
                 handles = [
                     Patch(facecolor=color, label=label)
@@ -414,6 +533,16 @@ class SummaryPlot(BasePlot):
                 ax.set_title(
                     title, y=_PlotDefaults.title_y_with_legend if legend else None
                 )
+
+            if created_figure:
+                _apply_compact_layout(fig)
+
+            _ensure_title_legend_spacing(
+                fig,
+                ax,
+                legend_artist,
+                adjust_layout=created_figure,
+            )
 
             return SummaryPlotResult(
                 fig=fig,
