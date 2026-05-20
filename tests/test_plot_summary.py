@@ -131,21 +131,20 @@ def test_plot_bar_kws_apply_to_vertical_bars(pmv_df: pd.DataFrame) -> None:
     assert patch.get_hatch() == "//"
 
 
-@pytest.mark.parametrize(
-    "bar_kws",
-    [
-        {"color": "red"},
-        {"facecolor": "red"},
-        {"left": 10},
-        {"height": 0.5},
-    ],
-)
-def test_plot_rejects_conflicting_bar_kws(
+def test_plot_bar_kws_can_override_horizontal_bar_height(
     pmv_df: pd.DataFrame,
-    bar_kws: dict[str, object],
 ) -> None:
-    with pytest.raises(ValueError, match="bar_kws cannot include"):
-        _new_summary(pmv_df).plot(bar_kws=bar_kws)
+    result = _new_summary(pmv_df).plot(bar_kws={"height": 0.42})
+    patch = result.artists[0].patches[0]
+
+    assert patch.get_height() == pytest.approx(0.42)
+
+
+def test_plot_bar_kws_can_override_vertical_bar_width(pmv_df: pd.DataFrame) -> None:
+    result = _new_summary(pmv_df).plot(vertical=True, bar_kws={"width": 0.52})
+    patch = result.artists[0].patches[0]
+
+    assert patch.get_width() == pytest.approx(0.52)
 
 
 def test_plot_returns_percentages(pmv_df: pd.DataFrame) -> None:
