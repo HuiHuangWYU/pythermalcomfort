@@ -17,6 +17,7 @@ def vertical_tmp_grad_ppd(
     clo: float | list[float],
     vertical_tmp_grad: float | list[float],
     round_output: bool = True,
+    limit_inputs: bool = True,
 ) -> VerticalTGradPPD:
     """Calculate the percentage of thermally dissatisfied people with a vertical
     temperature gradient between feet and head [55ASHRAE2023]_. This equation is only
@@ -64,6 +65,12 @@ def vertical_tmp_grad_ppd(
         Vertical temperature gradient between the feet and the head, [°C/m].
     round_output : bool, optional
         If True, rounds output value. If False, it does not round it. Defaults to True.
+    limit_inputs : bool, optional
+        By default, if the inputs are outside the standard applicability limits the
+        function returns nan. If False, returns values even if input values are
+        outside the applicability limits of the model. Defaults to True. The
+        applicability limits are 10 < tdb [°C] < 40, 10 < tr [°C] < 40,
+        0 < vr [m/s] < 0.2, 1 < met [met] < 4, and 0 < clo [clo] < 1.5.
 
     Returns
     -------
@@ -93,6 +100,7 @@ def vertical_tmp_grad_ppd(
         met=met,
         clo=clo,
         vertical_tmp_grad=vertical_tmp_grad,
+        limit_inputs=limit_inputs,
     )
 
     tdb = np.asarray(tdb)
@@ -101,20 +109,6 @@ def vertical_tmp_grad_ppd(
     met = np.asarray(met)
     clo = np.asarray(clo)
     vertical_tmp_grad = np.asarray(vertical_tmp_grad)
-
-    (
-        tdb_valid,
-        tr_valid,
-        v_valid,
-        met_valid,
-        clo_valid,
-    ) = _check_ashrae55_compliance(
-        tdb=tdb,
-        tr=tr,
-        v_limited=vr,
-        met=met,
-        clo=clo,
-    )
 
     tsv = pmv_ppd_ashrae(
         tdb=tdb,
@@ -133,15 +127,30 @@ def vertical_tmp_grad_ppd(
     if round_output:
         ppd_val = np.round(ppd_val, 1)
 
-    all_valid = ~(
-        np.isnan(tdb_valid)
-        | np.isnan(tr_valid)
-        | np.isnan(v_valid)
-        | np.isnan(met_valid)
-        | np.isnan(clo_valid)
-    )
+    if limit_inputs:
+        (
+            tdb_valid,
+            tr_valid,
+            met_valid,
+            clo_valid,
+            v_limited_valid,
+        ) = _check_ashrae55_compliance(
+            tdb=tdb,
+            tr=tr,
+            v_limited=vr,
+            met=met,
+            clo=clo,
+        )
 
-    ppd_val = np.where(all_valid, ppd_val, np.nan)
-    acceptability = np.where(all_valid, acceptability, np.nan)
+        all_valid = ~(
+            np.isnan(tdb_valid)
+            | np.isnan(tr_valid)
+            | np.isnan(met_valid)
+            | np.isnan(clo_valid)
+            | np.isnan(v_limited_valid)
+        )
+
+        ppd_val = np.where(all_valid, ppd_val, np.nan)
+        acceptability = np.where(all_valid, acceptability, np.nan)
 
     return VerticalTGradPPD(ppd_vg=ppd_val, acceptability=acceptability)
