@@ -127,6 +127,17 @@ class _PlotDefaults:
 
         bar_edgecolor: str = "white"
         bar_linewidth: float = 1.0
+        layout_pad: float = 0.2
+        legend_ncol_max: int = 3
+        title_legend_gap: float = 5.0
+        title_spacing_iterations: int = 3
+        vertical_legend_ncol: int = 1
+        figsize_horizontal_legend: tuple = (6.4, 1.8)
+        figsize_horizontal_labels: tuple = (6.4, 1.4)
+        figsize_horizontal_plain: tuple = (6.4, 1.1)
+        figsize_vertical_labels: tuple = (3.2, 4.0)
+        figsize_vertical_legend: tuple = (2.8, 4.0)
+        figsize_vertical_plain: tuple = (2.2, 4.0)
         percentage_fontsize: int = 12
         label_fontsize: int = 11
         pct_min_to_show: float = 5.0

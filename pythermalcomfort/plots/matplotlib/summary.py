@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from matplotlib.legend import Legend
 from matplotlib.patches import Patch
 
@@ -135,6 +136,71 @@ def _prepare_axis(ax: Axes) -> None:
         spine.set_visible(False)
 
 
+def _should_show_region_labels(*, legend: bool, region_labels: Sequence[str]) -> bool:
+    """Return whether region labels should be drawn next to the bar."""
+    return not legend and any(label.strip() for label in region_labels)
+
+
+def _summary_figsize(
+    *,
+    vertical: bool,
+    legend: bool,
+    show_region_labels: bool,
+) -> tuple[float, float]:
+    """Return compact default figure size for standalone summary plots."""
+    D = _PlotDefaults.Summary
+    if vertical:
+        if show_region_labels:
+            return D.figsize_vertical_labels
+        return D.figsize_vertical_legend if legend else D.figsize_vertical_plain
+
+    if legend:
+        return D.figsize_horizontal_legend
+    return (
+        D.figsize_horizontal_labels
+        if show_region_labels
+        else D.figsize_horizontal_plain
+    )
+
+
+def _apply_compact_layout(fig: Figure) -> None:
+    """Trim default Matplotlib margins for standalone summary figures."""
+    fig.tight_layout(pad=_PlotDefaults.Summary.layout_pad)
+
+
+def _ensure_title_legend_spacing(
+    fig: Figure,
+    ax: Axes,
+    legend: Legend | None,
+    *,
+    adjust_layout: bool,
+) -> None:
+    """Keep the title above the legend with only the measured gap needed."""
+    if legend is None or not ax.get_title():
+        return
+
+    D = _PlotDefaults.Summary
+    min_gap_px = D.title_legend_gap * fig.dpi / 72
+    for _ in range(D.title_spacing_iterations):
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
+        title_bbox = ax.title.get_window_extent(renderer)
+        legend_bbox = legend.get_window_extent(renderer)
+        current_gap_px = title_bbox.y0 - legend_bbox.y1
+        if current_gap_px >= min_gap_px:
+            return
+
+        axes_height_px = ax.get_window_extent(renderer).height
+        if axes_height_px <= 0:
+            return
+
+        _, title_y = ax.title.get_position()
+        y_adjustment = (min_gap_px - current_gap_px) / axes_height_px
+        ax.title.set_y(title_y + y_adjustment)
+        if adjust_layout:
+            _apply_compact_layout(fig)
+
+
 # ── annotation helper ─────────────────────────────────────────────────────
 
 
@@ -170,10 +236,16 @@ def _plot_summary(
     region_labels: Sequence[str],
     region_colors: Sequence[str],
     show_region_labels: bool,
+    bar_kws: Mapping[str, Any],
 ) -> list[Any]:
     """Render a stacked summary bar (horizontal or vertical) with annotations."""
     D = _PlotDefaults.Summary
     artists: list[Any] = []
+    bar_opts = {
+        "edgecolor": D.bar_edgecolor,
+        "linewidth": D.bar_linewidth,
+        **dict(bar_kws),
+    }
 
     if vertical:
         ax.set_xlim(*(D.v_xlim if show_region_labels else D.v_xlim_legend))
@@ -188,25 +260,25 @@ def _plot_summary(
         value = float(region_percentages.iloc[i])
 
         if vertical:
-            bar = ax.bar(
-                x=D.v_bar_x,
-                height=value,
-                width=D.v_bar_width,
-                bottom=cumulative,
-                color=color,
-                edgecolor=D.bar_edgecolor,
-                linewidth=D.bar_linewidth,
-            )
+            bar_args = {
+                "x": D.v_bar_x,
+                "height": value,
+                "width": D.v_bar_width,
+                "bottom": cumulative,
+                "color": color,
+                **bar_opts,
+            }
+            bar = ax.bar(**bar_args)
         else:
-            bar = ax.barh(
-                y=D.h_bar_y,
-                width=value,
-                left=cumulative,
-                height=D.h_bar_height,
-                color=color,
-                edgecolor=D.bar_edgecolor,
-                linewidth=D.bar_linewidth,
-            )
+            bar_args = {
+                "y": D.h_bar_y,
+                "width": value,
+                "left": cumulative,
+                "height": D.h_bar_height,
+                "color": color,
+                **bar_opts,
+            }
+            bar = ax.barh(**bar_args)
         artists.append(bar)
 
         if value >= D.pct_min_to_show:
@@ -246,6 +318,14 @@ def _plot_summary(
         cumulative += value
 
     return artists
+
+
+def _default_legend_ncol(*, vertical: bool, n_labels: int) -> int:
+    """Return a compact default legend column count."""
+    D = _PlotDefaults.Summary
+    if vertical:
+        return D.vertical_legend_ncol
+    return min(n_labels, D.legend_ncol_max)
 
 
 # ── public API ─────────────────────────────────────────────────────────────
@@ -330,8 +410,8 @@ class SummaryPlot(BasePlot):
         title: str | None = None,
         vertical: bool = False,
         legend: bool = True,
+        bar_kws: Mapping[str, Any] | None = None,
         legend_kws: Mapping[str, Any] | None = None,
-        # fixme missing bar kwargs
     ) -> SummaryPlotResult:
         """Render a threshold summary plot for the configured output column.
 
@@ -339,7 +419,7 @@ class SummaryPlot(BasePlot):
         ----------
         ax : Axes, optional
             Existing axis to draw on.  If ``None``, a new figure/axis is created
-            with a default size of ``(7, 4)`` inches.
+            with a compact default size for the selected orientation.
         title : str, optional
             Optional axis title.  When both *title* and *legend* are shown the
             legend sits just above the chart and the title floats above it,
@@ -349,6 +429,9 @@ class SummaryPlot(BasePlot):
         legend : bool
             Whether to draw a colour-coded legend above the bar.  When
             ``True``, region labels are omitted from the bar itself.
+        bar_kws : dict, optional
+            Keyword overrides forwarded to ``ax.bar`` or ``ax.barh`` for the
+            stacked bar segments after SummaryPlot defaults are applied.
         legend_kws : dict, optional
             Keyword overrides forwarded to ``ax.legend``.
 
@@ -368,9 +451,20 @@ class SummaryPlot(BasePlot):
                     "Regions are not set. Call set_regions(...) before plot(...)."
                 )
             rc = self._region_config
+            show_region_labels = _should_show_region_labels(
+                legend=legend,
+                region_labels=rc.labels,
+            )
+            created_figure = ax is None
 
-            if ax is None:
-                fig, ax = plt.subplots(figsize=_PlotDefaults.figsize)
+            if created_figure:
+                fig, ax = plt.subplots(
+                    figsize=_summary_figsize(
+                        vertical=vertical,
+                        legend=legend,
+                        show_region_labels=show_region_labels,
+                    )
+                )
             else:
                 fig = ax.figure
 
@@ -388,7 +482,8 @@ class SummaryPlot(BasePlot):
                 region_percentages=percentages,
                 region_labels=rc.labels,
                 region_colors=rc.colors,
-                show_region_labels=not legend,
+                show_region_labels=show_region_labels,
+                bar_kws=bar_kws or {},
             )
 
             legend_artist: Legend | None = None
@@ -402,7 +497,8 @@ class SummaryPlot(BasePlot):
                     else _PlotDefaults.Threshold.legend_bbox_to_anchor,
                 )
                 lg_opts.setdefault(
-                    "ncol", min(len(rc.labels), _PlotDefaults.Threshold.legend_ncol_max)
+                    "ncol",
+                    _default_legend_ncol(vertical=vertical, n_labels=len(rc.labels)),
                 )
                 handles = [
                     Patch(facecolor=color, label=label)
@@ -414,6 +510,16 @@ class SummaryPlot(BasePlot):
                 ax.set_title(
                     title, y=_PlotDefaults.title_y_with_legend if legend else None
                 )
+
+            if created_figure:
+                _apply_compact_layout(fig)
+
+            _ensure_title_legend_spacing(
+                fig,
+                ax,
+                legend_artist,
+                adjust_layout=created_figure,
+            )
 
             return SummaryPlotResult(
                 fig=fig,

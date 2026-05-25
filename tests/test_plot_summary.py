@@ -97,6 +97,56 @@ def test_plot_vertical_mode_executes(pmv_df: pd.DataFrame) -> None:
     assert len(result.artists) > 0
 
 
+def test_plot_uses_compact_default_figsize(pmv_df: pd.DataFrame) -> None:
+    horizontal = _new_summary(pmv_df).plot()
+    vertical = _new_summary(pmv_df).plot(vertical=True)
+
+    assert tuple(horizontal.fig.get_size_inches()) == pytest.approx((6.4, 1.8))
+    assert tuple(vertical.fig.get_size_inches()) == pytest.approx((2.8, 4.0))
+
+
+def test_vertical_empty_labels_uses_compact_xlim(pmv_df: pd.DataFrame) -> None:
+    result = (
+        SummaryPlot(pmv_df)
+        .set_regions(output="pmv", thresholds=[-0.5, 0.5], labels=[])
+        .plot(vertical=True, legend=False)
+    )
+
+    left, right = result.ax.get_xlim()
+    assert right - left == pytest.approx(1.0)
+
+
+def test_plot_bar_kws_apply_to_horizontal_bars(pmv_df: pd.DataFrame) -> None:
+    result = _new_summary(pmv_df).plot(bar_kws={"alpha": 0.4, "linewidth": 2.5})
+    patch = result.artists[0].patches[0]
+
+    assert patch.get_alpha() == pytest.approx(0.4)
+    assert patch.get_linewidth() == pytest.approx(2.5)
+
+
+def test_plot_bar_kws_apply_to_vertical_bars(pmv_df: pd.DataFrame) -> None:
+    result = _new_summary(pmv_df).plot(vertical=True, bar_kws={"hatch": "//"})
+    patch = result.artists[0].patches[0]
+
+    assert patch.get_hatch() == "//"
+
+
+def test_plot_bar_kws_can_override_horizontal_bar_height(
+    pmv_df: pd.DataFrame,
+) -> None:
+    result = _new_summary(pmv_df).plot(bar_kws={"height": 0.42})
+    patch = result.artists[0].patches[0]
+
+    assert patch.get_height() == pytest.approx(0.42)
+
+
+def test_plot_bar_kws_can_override_vertical_bar_width(pmv_df: pd.DataFrame) -> None:
+    result = _new_summary(pmv_df).plot(vertical=True, bar_kws={"width": 0.52})
+    patch = result.artists[0].patches[0]
+
+    assert patch.get_width() == pytest.approx(0.52)
+
+
 def test_plot_returns_percentages(pmv_df: pd.DataFrame) -> None:
     result = _new_summary(pmv_df).plot()
 
@@ -175,6 +225,31 @@ def test_plot_legend_shown_by_default(pmv_df: pd.DataFrame) -> None:
     result = _new_summary(pmv_df).plot()
 
     assert isinstance(result.legend, Legend)
+
+
+def test_plot_title_does_not_overlap_horizontal_legend(pmv_df: pd.DataFrame) -> None:
+    result = _new_summary(pmv_df).plot(title="PMV Distribution")
+    result.fig.canvas.draw()
+    renderer = result.fig.canvas.get_renderer()
+
+    title_bbox = result.ax.title.get_window_extent(renderer)
+    legend_bbox = result.legend.get_window_extent(renderer)
+
+    assert title_bbox.y0 > legend_bbox.y1
+
+
+def test_plot_title_does_not_overlap_vertical_legend(pmv_df: pd.DataFrame) -> None:
+    result = _new_summary(pmv_df).plot(
+        vertical=True,
+        title="PMV Distribution (Vertical)",
+    )
+    result.fig.canvas.draw()
+    renderer = result.fig.canvas.get_renderer()
+
+    title_bbox = result.ax.title.get_window_extent(renderer)
+    legend_bbox = result.legend.get_window_extent(renderer)
+
+    assert title_bbox.y0 > legend_bbox.y1
 
 
 def test_plot_legend_none_when_disabled(pmv_df: pd.DataFrame) -> None:
