@@ -8,7 +8,7 @@ from pythermalcomfort.models.pmv_ppd_ashrae import pmv_ppd_ashrae
 from pythermalcomfort.utilities import (
     Models,
     Units,
-    _check_standard_compliance_array,
+    _check_ashrae55_compliance,
     units_converter,
 )
 
@@ -22,6 +22,7 @@ def ankle_draft(
     clo: float | list[float],
     v_ankle: float | list[float],
     units: str = Units.SI.value,
+    limit_inputs: bool = True,
 ) -> AnkleDraft:
     """Calculate the percentage of thermally dissatisfied people with the ankle draft
     (0.1 m) above floor level [Liu2017]_.
@@ -71,6 +72,12 @@ def ankle_draft(
 
     units : {'SI', 'IP'}
         Select the SI (International System of Units) or the IP (Imperial Units) system.
+    limit_inputs : bool, optional
+        By default, if the inputs are outside the standard applicability limits the
+        function returns nan. If False, returns values even if input values are
+        outside the applicability limits of the model. Defaults to True. The
+        applicability limits are 10 < tdb [°C] < 40, 10 < tr [°C] < 40,
+        0 < vr [m/s] < 0.2, 1 < met [met] < 4, and 0 < clo [clo] < 1.5.
 
     Returns
     -------
@@ -97,6 +104,7 @@ def ankle_draft(
         clo=clo,
         v_ankle=v_ankle,
         units=units,
+        limit_inputs=limit_inputs,
     )
 
     # Convert lists to numpy arrays
@@ -111,19 +119,6 @@ def ankle_draft(
     if units.upper() == Units.IP.value:
         tdb, tr, vr, v_ankle = units_converter(tdb=tdb, tr=tr, vr=vr, vel=v_ankle)
 
-    tdb_valid, tr_valid, v_valid, v_limited = _check_standard_compliance_array(
-        standard=Models.ashrae_55_2023.value,
-        tdb=tdb,
-        tr=tr,
-        v_limited=vr,
-        v=vr,
-    )
-
-    if np.all(np.isnan(v_limited)):
-        raise ValueError(
-            "This equation is only applicable for air speed lower than 0.2 m/s",
-        )
-
     tsv = pmv_ppd_ashrae(
         tdb,
         tr,
@@ -132,6 +127,7 @@ def ankle_draft(
         met,
         clo,
         model=Models.ashrae_55_2023.value,
+        limit_inputs=False,
     ).pmv
     ppd_val = np.around(
         np.exp(-2.58 + 3.05 * v_ankle - 1.06 * tsv)
@@ -140,4 +136,33 @@ def ankle_draft(
         1,
     )
     acceptability = ppd_val <= 20
+
+    if limit_inputs:
+        tdb_valid, tr_valid, v_valid, met_valid, clo_valid, v_limited = (
+            _check_ashrae55_compliance(
+                tdb=tdb,
+                tr=tr,
+                v_limited=vr,
+                v=vr,
+                met=met,
+                clo=clo,
+                v_param_name="vr",
+            )
+        )
+
+        if np.all(np.isnan(v_limited)):
+            raise ValueError(
+                "This equation is only applicable for air speed lower than 0.2 m/s",
+            )
+
+        all_valid = ~(
+            np.isnan(tdb_valid)
+            | np.isnan(tr_valid)
+            | np.isnan(v_valid)
+            | np.isnan(met_valid)
+            | np.isnan(clo_valid)
+        )
+        ppd_val = np.where(all_valid, ppd_val, np.nan)
+        acceptability = np.where(all_valid, acceptability, np.nan)
+
     return AnkleDraft(ppd_ad=ppd_val, acceptability=acceptability)

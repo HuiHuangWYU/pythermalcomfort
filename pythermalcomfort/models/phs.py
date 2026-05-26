@@ -7,10 +7,10 @@ from numba import jit, prange
 
 from pythermalcomfort.classes_input import PHSInputs
 from pythermalcomfort.classes_return import PHS
+from pythermalcomfort.shared_functions import valid_range
 from pythermalcomfort.utilities import (
     Models,
     Postures,
-    _check_standard_compliance_array,
     met_to_w_m2,
     p_sat,
 )
@@ -423,22 +423,15 @@ def phs(
     }
 
     if limit_inputs:
-        (
-            tdb_valid,
-            tr_valid,
-            v_valid,
-            p_a_valid,
-            met_valid,
-            clo_valid,
-        ) = _check_standard_compliance_array(
-            model,
-            tdb=tdb,
-            tr=tr,
-            v=v,
-            met=met,
-            clo=clo,
-            p_a=p_a,
-        )
+        # ISO 7933 Annex A applicability limits. p_a lower bound is 0.5 in the
+        # 2023 revision and 0 in the 2004 edition; all other limits are identical.
+        p_a_lower = 0.5 if model == Models.iso_7933_2023.value else 0
+        tdb_valid = valid_range(tdb, (15.0, 50.0))
+        tr_valid = valid_range(tr, (0.0, 60.0))
+        v_valid = valid_range(v, (0.0, 3.0))
+        p_a_valid = valid_range(p_a, (p_a_lower, 4.5))
+        met_valid = valid_range(met, (100, 450))
+        clo_valid = valid_range(clo, (0.1, 1.0))
         all_valid = ~(
             np.isnan(tdb_valid)
             | np.isnan(tr_valid)

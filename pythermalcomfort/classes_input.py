@@ -254,6 +254,7 @@ class AnkleDraftInputs(BaseInputs):
         clo,
         v_ankle,
         units=Units.SI.value,
+        limit_inputs=True,
     ):
         # Initialize with only required fields, setting others to None
         super().__init__(
@@ -265,6 +266,7 @@ class AnkleDraftInputs(BaseInputs):
             clo=clo,
             v_ankle=v_ankle,
             units=units,
+            limit_inputs=limit_inputs,
         )
 
 
@@ -967,6 +969,7 @@ class VerticalTGradPPDInputs(BaseInputs):
         clo,
         vertical_tmp_grad,
         units=Units.SI.value,
+        limit_inputs=True,
     ):
         # Initialize with only required fields, setting others to None
         super().__init__(
@@ -978,6 +981,7 @@ class VerticalTGradPPDInputs(BaseInputs):
             clo=clo,
             vertical_tmp_grad=vertical_tmp_grad,
             units=units,
+            limit_inputs=limit_inputs,
         )
 
 
