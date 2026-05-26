@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import pytest
 
@@ -72,3 +74,25 @@ def test_ankle_draft_invalid_list_inputs() -> None:
             v_ankle=[0.1, 0.1, 0.1],
             units=Units.SI.value,
         )
+
+
+def test_ankle_draft_limit_inputs_false_suppresses_warning_and_nan() -> None:
+    """limit_inputs=False bypasses range checks: no UserWarning, no NaN mask."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        result = ankle_draft(50, 25, 0.1, 50, 1.2, 0.5, 0.1, limit_inputs=False)
+    assert not np.isnan(result.ppd_ad)
+
+
+def test_ankle_draft_limit_inputs_false_skips_valueerror() -> None:
+    """limit_inputs=False bypasses the vr < 0.2 equation-applicability check."""
+    # vr=0.5 normally raises ValueError; with limit_inputs=False it should not
+    result = ankle_draft(25, 25, 0.5, 50, 1.2, 0.5, 0.1, limit_inputs=False)
+    assert not np.isnan(result.ppd_ad)
+
+
+def test_ankle_draft_limit_inputs_true_still_warns_and_nans() -> None:
+    """limit_inputs=True (default) keeps current behavior: warning + NaN mask."""
+    with pytest.warns(UserWarning):
+        result = ankle_draft(50, 25, 0.1, 50, 1.2, 0.5, 0.1)
+    assert np.isnan(result.ppd_ad)

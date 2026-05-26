@@ -213,6 +213,7 @@ class ASHRAEInputs(BaseInputs):
         t_running_mean,
         v,
         units,
+        round_output=True,
     ):
         super().__init__(
             tdb=tdb,
@@ -220,6 +221,7 @@ class ASHRAEInputs(BaseInputs):
             v=v,
             units=units,
             t_running_mean=t_running_mean,
+            round_output=round_output,
         )
 
 
@@ -232,6 +234,7 @@ class ENInputs(BaseInputs):
         t_running_mean,
         v,
         units,
+        round_output=True,
     ):
         super().__init__(
             tdb=tdb,
@@ -239,6 +242,7 @@ class ENInputs(BaseInputs):
             v=v,
             units=units,
             t_running_mean=t_running_mean,
+            round_output=round_output,
         )
 
 
@@ -254,6 +258,7 @@ class AnkleDraftInputs(BaseInputs):
         clo,
         v_ankle,
         units=Units.SI.value,
+        limit_inputs=True,
     ):
         # Initialize with only required fields, setting others to None
         super().__init__(
@@ -265,6 +270,7 @@ class AnkleDraftInputs(BaseInputs):
             clo=clo,
             v_ankle=v_ankle,
             units=units,
+            limit_inputs=limit_inputs,
         )
 
 
@@ -967,6 +973,7 @@ class VerticalTGradPPDInputs(BaseInputs):
         clo,
         vertical_tmp_grad,
         units=Units.SI.value,
+        limit_inputs=True,
     ):
         # Initialize with only required fields, setting others to None
         super().__init__(
@@ -978,6 +985,7 @@ class VerticalTGradPPDInputs(BaseInputs):
             clo=clo,
             vertical_tmp_grad=vertical_tmp_grad,
             units=units,
+            limit_inputs=limit_inputs,
         )
 
 

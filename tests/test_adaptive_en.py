@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from pythermalcomfort.models import adaptive_en
@@ -54,3 +55,54 @@ def test_ashrae_inputs_invalid_v_type() -> None:
     """Test that the function raises a TypeError for invalid v type."""
     with pytest.raises(TypeError):
         adaptive_en(tdb=25, tr=25, t_running_mean=20, v="invalid")
+
+
+def test_round_output_default_preserves_behaviour() -> None:
+    """Default call must match an explicit round_output=True call."""
+    default_result = adaptive_en(tdb=25, tr=25, t_running_mean=20.5, v=0.1)
+    explicit_result = adaptive_en(
+        tdb=25,
+        tr=25,
+        t_running_mean=20.5,
+        v=0.1,
+        round_output=True,
+    )
+
+    assert default_result.tmp_cmf == explicit_result.tmp_cmf
+    assert default_result.tmp_cmf_cat_i_up == explicit_result.tmp_cmf_cat_i_up
+    assert default_result.tmp_cmf_cat_i_low == explicit_result.tmp_cmf_cat_i_low
+    assert default_result.tmp_cmf_cat_ii_up == explicit_result.tmp_cmf_cat_ii_up
+    assert default_result.tmp_cmf_cat_iii_low == explicit_result.tmp_cmf_cat_iii_low
+
+
+def test_round_output_false_returns_unrounded() -> None:
+    """round_output=False must return unrounded t_cmf and bounds at full precision."""
+    # 0.33 * 20.5 + 18.8 = 25.565; rounded to 1 dp this is 25.6.
+    unrounded = adaptive_en(
+        tdb=25,
+        tr=25,
+        t_running_mean=20.5,
+        v=0.1,
+        round_output=False,
+    )
+    rounded = adaptive_en(
+        tdb=25,
+        tr=25,
+        t_running_mean=20.5,
+        v=0.1,
+        round_output=True,
+    )
+
+    assert np.isclose(unrounded.tmp_cmf, 25.565)
+    assert np.isclose(rounded.tmp_cmf, 25.6)
+    assert unrounded.tmp_cmf != rounded.tmp_cmf
+
+    # Bounds derive from the unrounded value when round_output=False.
+    assert np.isclose(unrounded.tmp_cmf_cat_i_low, 25.565 - 3.0)
+    assert np.isclose(unrounded.tmp_cmf_cat_ii_up, 25.565 + 3.0)
+
+
+def test_round_output_invalid_type_raises() -> None:
+    """A non-boolean round_output must raise TypeError."""
+    with pytest.raises(TypeError):
+        adaptive_en(tdb=25, tr=25, t_running_mean=20, v=0.1, round_output="yes")

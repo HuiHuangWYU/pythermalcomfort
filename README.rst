@@ -166,30 +166,17 @@ Common commands
 Release process
 ---------------
 
-Releases are tag-driven and published via GitHub Actions Trusted Publishing.
+Releases are tag-driven and published via GitHub Actions Trusted Publishing
+(OIDC — no ``PYPI_API_TOKEN`` or ``TEST_PYPI_API_TOKEN`` secret is required).
 
-Production release (PyPI)
-~~~~~~~~~~~~~~~~~~~~~~~~~
+The standard cycle is:
 
-.. code-block:: bash
+1. Develop and test a release candidate on ``development`` → TestPyPI.
+2. Merge ``development`` → ``master`` via pull request.
+3. Finalize the version on ``master`` → PyPI.
 
-    # prepare local release branch
-    git checkout master
-    git pull --ff-only
-    git fetch --tags --prune
-
-    # finalize an rc to stable release
-    bump-my-version bump patch     # or minor / major for a fresh release
-
-    # publish commit and tag (tag push triggers PyPI release workflow)
-    git push
-    git push --tags
-
-Pre-release (TestPyPI)
-~~~~~~~~~~~~~~~~~~~~~~
-
-Use pre-release tags from ``development`` to validate packaging before releasing
-to PyPI.
+Step 1 — pre-release on ``development`` (TestPyPI)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
@@ -197,30 +184,50 @@ to PyPI.
     git pull --ff-only
     git fetch --tags --prune
 
-    # start rc cycle for next patch (creates e.g. 3.9.6rc1)
+    # Start the RC cycle for the next patch release (e.g. 3.9.8 → 3.9.9rc1):
     bump-my-version bump patch
 
-    # iterate rc builds while testing (rc1 -> rc2 -> rc3 ...)
-    bump-my-version bump pre_n
-
-    # publish commit and tag (tag push triggers TestPyPI release workflow)
+    # Push the bump commit and tag — this triggers tests + TestPyPI deploy:
     git push
     git push --tags
 
-If additional commits are made after an ``rc`` tag, create a new pre-release
-tag by running ``bump-my-version bump pre_n`` again, then push commit and tags.
+If the RC needs additional fixes, make the commits then create another RC:
 
-Rules and safeguards:
+.. code-block:: bash
 
-* Keep ``.bumpversion.toml`` and git tags aligned.
-* Tag format is standardized as ``vX.Y.Z`` and ``vX.Y.ZrcN``.
-* Production tags must point to commits reachable from ``master``.
-* TestPyPI publishing is triggered by tags matching ``v*rc*`` and those tags
-  must point to commits reachable from ``development``.
-* If a version exists in files but not as a tag, create and push the missing tag
-  before the next bump.
-* PyPI and TestPyPI publishing both use Trusted Publisher (OIDC), so no
-  ``PYPI_API_TOKEN`` or ``TEST_PYPI_API_TOKEN`` secret is required.
+    bump-my-version bump pre_n    # e.g. 3.9.9rc1 → 3.9.9rc2
+    git push
+    git push --tags
+
+Step 2 — open and merge a pull request from ``development`` to ``master``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+CI runs the full test suite on the PR. Once it passes, merge via GitHub.
+
+Step 3 — finalize on ``master`` (PyPI)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: bash
+
+    git checkout master
+    git pull --ff-only
+    git fetch --tags --prune
+
+    # Strip the rc suffix to produce the stable version.
+    # Replace X.Y.Z with the target version (e.g. 3.9.9):
+    bump-my-version bump --new-version X.Y.Z patch
+
+    # Push the bump commit and tag — this triggers tests + PyPI deploy:
+    git push
+    git push --tags
+
+Rules:
+
+* All RC tags (``vX.Y.ZrcN``) must be pushed from ``development``.
+* All stable tags (``vX.Y.Z``) must be pushed from ``master`` after merging.
+* Tag format: ``vX.Y.Z`` for stable, ``vX.Y.ZrcN`` for pre-release.
+* Do not push a stable tag before the corresponding ``development`` → ``master``
+  PR has been merged; the CI deploy job will reject it.
 
 Getting Help
 ============
