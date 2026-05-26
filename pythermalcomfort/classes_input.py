@@ -213,6 +213,7 @@ class ASHRAEInputs(BaseInputs):
         t_running_mean,
         v,
         units,
+        round_output=True,
     ):
         super().__init__(
             tdb=tdb,
@@ -220,6 +221,7 @@ class ASHRAEInputs(BaseInputs):
             v=v,
             units=units,
             t_running_mean=t_running_mean,
+            round_output=round_output,
         )
 
 
@@ -232,6 +234,7 @@ class ENInputs(BaseInputs):
         t_running_mean,
         v,
         units,
+        round_output=True,
     ):
         super().__init__(
             tdb=tdb,
@@ -239,6 +242,7 @@ class ENInputs(BaseInputs):
             v=v,
             units=units,
             t_running_mean=t_running_mean,
+            round_output=round_output,
         )
 
 

@@ -15,6 +15,7 @@ def adaptive_en(
     v: float | list[float],
     units: Literal["SI", "IP"] = Units.SI.value,
     limit_inputs: bool = True,
+    round_output: bool = True,
 ) -> AdaptiveEN:
     """Calculate the adaptive thermal comfort based on EN 16798-1 2019 [16798EN2019]_.
 
@@ -45,6 +46,11 @@ def adaptive_en(
         Select the SI (International System of Units) or the IP (Imperial Units) system.
     limit_inputs : bool, default True
         If True, returns NaN for inputs outside the standard applicability limits.
+
+    round_output : bool, default True
+        If True, rounds the returned comfort temperature and category bounds to one decimal
+        place in the output unit (rounding is applied after any IP unit conversion).
+        If False, returns the unrounded values.
 
     Returns
     -------
@@ -78,7 +84,14 @@ def adaptive_en(
         # if the running mean temperature is between 10 °C and 30 °C.
     """
     # Validate inputs using the ENInputs class
-    ENInputs(tdb=tdb, tr=tr, t_running_mean=t_running_mean, v=v, units=units)
+    ENInputs(
+        tdb=tdb,
+        tr=tr,
+        t_running_mean=t_running_mean,
+        v=v,
+        units=units,
+        round_output=round_output,
+    )
 
     tdb = np.asarray(tdb)
     tr = np.asarray(tr)
@@ -135,15 +148,24 @@ def adaptive_en(
             tmp_cmf_cat_iii_low=t_cmf_iii_lower,
         )
 
+    if round_output:
+        t_cmf = np.around(t_cmf, 1)
+        t_cmf_i_lower = np.around(t_cmf_i_lower, 1)
+        t_cmf_ii_lower = np.around(t_cmf_ii_lower, 1)
+        t_cmf_iii_lower = np.around(t_cmf_iii_lower, 1)
+        t_cmf_i_upper = np.around(t_cmf_i_upper, 1)
+        t_cmf_ii_upper = np.around(t_cmf_ii_upper, 1)
+        t_cmf_iii_upper = np.around(t_cmf_iii_upper, 1)
+
     return AdaptiveEN(
-        tmp_cmf=np.around(t_cmf, 1),
+        tmp_cmf=t_cmf,
         acceptability_cat_i=acceptability_i,
         acceptability_cat_ii=acceptability_ii,
         acceptability_cat_iii=acceptability_iii,
-        tmp_cmf_cat_i_up=np.around(t_cmf_i_upper, 1),
-        tmp_cmf_cat_ii_up=np.around(t_cmf_ii_upper, 1),
-        tmp_cmf_cat_iii_up=np.around(t_cmf_iii_upper, 1),
-        tmp_cmf_cat_i_low=np.around(t_cmf_i_lower, 1),
-        tmp_cmf_cat_ii_low=np.around(t_cmf_ii_lower, 1),
-        tmp_cmf_cat_iii_low=np.around(t_cmf_iii_lower, 1),
+        tmp_cmf_cat_i_up=t_cmf_i_upper,
+        tmp_cmf_cat_ii_up=t_cmf_ii_upper,
+        tmp_cmf_cat_iii_up=t_cmf_iii_upper,
+        tmp_cmf_cat_i_low=t_cmf_i_lower,
+        tmp_cmf_cat_ii_low=t_cmf_ii_lower,
+        tmp_cmf_cat_iii_low=t_cmf_iii_lower,
     )
