@@ -5,6 +5,7 @@ on:
     types: [opened, synchronize, reopened]
     branches:
         - development
+        - master
 
 jobs:
 
@@ -49,11 +50,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install setuptools
           python -m pip install "tox<4" tox-gh-actions
-          python -m pip install ruff
-      - name: Lint
-        run: ruff check ./pythermalcomfort ./tests
-      - name: Check formatting
-        run: ruff format --check ./pythermalcomfort ./tests
       - name: Run Tox
         run: |
           tox

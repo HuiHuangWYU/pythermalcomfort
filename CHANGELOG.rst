@@ -1,6 +1,26 @@
 Changelog
 =========
 
+3.9.8 (2026-05-25)
+------------------
+
+* Added optional ``round_output`` parameter to ``adaptive_ashrae`` and ``adaptive_en``
+  to control rounding of output values.
+* Added ``limit_inputs`` parameter to ``ankle_draft`` and ``vertical_tmp_grad_ppd``,
+  consistent with other model functions.
+* ``ankle_draft`` and ``vertical_tmp_grad_ppd`` now raise ``UserWarning`` when inputs
+  exceed model applicability limits.
+* Fixed ``compliance`` attribute being included in non-ASHRAE PMV model outputs;
+  it is now only returned by ``pmv_ppd_ashrae``.
+* Fixed UTCI stress category mapping when ``units="IP"``; categories were
+  incorrectly mapped before IP unit conversion.
+
+3.9.3 (2026-05-01)
+------------------
+
+* Maintenance release: internal CI pipeline improvements and dependency updates.
+  No user-facing changes.
+
 3.9.2 (2026-04-14)
 ------------------
 
