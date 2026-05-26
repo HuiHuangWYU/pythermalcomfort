@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import numpy as np
 
-from pythermalcomfort.classes_input import HIInputs
+from pythermalcomfort.classes_input import HIInputs, NumericInput
 from pythermalcomfort.classes_return import HI
 from pythermalcomfort.shared_functions import mapping, valid_range
 
 
 def heat_index_rothfusz(
-    tdb: float | list[float],
-    rh: float | list[float],
+    tdb: NumericInput,
+    rh: NumericInput,
     round_output: bool = True,
     limit_inputs: bool = True,
 ) -> HI:

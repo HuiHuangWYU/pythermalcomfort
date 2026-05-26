@@ -2,17 +2,17 @@ from typing import Literal
 
 import numpy as np
 
-from pythermalcomfort.classes_input import ENInputs
+from pythermalcomfort.classes_input import ENInputs, NumericInput
 from pythermalcomfort.classes_return import AdaptiveEN
 from pythermalcomfort.shared_functions import valid_range
 from pythermalcomfort.utilities import Units, operative_tmp, units_converter
 
 
 def adaptive_en(
-    tdb: float | list[float],
-    tr: float | list[float],
-    t_running_mean: float | list[float],
-    v: float | list[float],
+    tdb: NumericInput,
+    tr: NumericInput,
+    t_running_mean: NumericInput,
+    v: NumericInput,
     units: Literal["SI", "IP"] = Units.SI.value,
     limit_inputs: bool = True,
     round_output: bool = True,

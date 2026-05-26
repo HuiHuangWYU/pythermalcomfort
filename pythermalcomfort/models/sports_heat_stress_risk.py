@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import numpy as np
 from scipy.optimize import brentq
 
-from pythermalcomfort.classes_input import SportsHeatStressInputs
+from pythermalcomfort.classes_input import NumericInput, SportsHeatStressInputs
 from pythermalcomfort.classes_return import SportsHeatStressRisk
 from pythermalcomfort.models import phs
 from pythermalcomfort.utilities import validate_type
@@ -45,9 +45,9 @@ class _SportsValues:
 class Sports:
     """Namespace of predefined sport values.
 
-    Use attributes like `Sports.RUNNING` to obtain a `_SportsValues` instance.
-    This class uses a frozen dataclass decorator to prevent modification of the
-    namespace. Attributes are class-level constants, not instance fields.
+    Use attributes like `Sports.RUNNING` to obtain a `_SportsValues` instance. This
+    class uses a frozen dataclass decorator to prevent modification of the namespace.
+    Attributes are class-level constants, not instance fields.
     """
 
     ABSEILING = _SportsValues(clo=0.6, met=6.0, vr=0.5, duration=120)
@@ -86,10 +86,10 @@ class Sports:
 
 
 def sports_heat_stress_risk(
-    tdb: float | list[float] | np.ndarray,
-    tr: float | list[float] | np.ndarray,
-    rh: float | list[float] | np.ndarray,
-    vr: float | list[float] | np.ndarray,
+    tdb: NumericInput | np.ndarray,
+    tr: NumericInput | np.ndarray,
+    rh: NumericInput | np.ndarray,
+    vr: NumericInput | np.ndarray,
     sport: _SportsValues,
 ) -> SportsHeatStressRisk:
     """Calculate sports heat stress risk levels based on environmental conditions and

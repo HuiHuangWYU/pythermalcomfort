@@ -5,26 +5,26 @@ import math
 import numpy as np
 from numba import float64, jit, vectorize
 
-from pythermalcomfort.classes_input import GaggeTwoNodesInputs
+from pythermalcomfort.classes_input import GaggeTwoNodesInputs, NumericInput
 from pythermalcomfort.classes_return import SET, GaggeTwoNodes
 from pythermalcomfort.utilities import Postures, met_to_w_m2, p_sat_torr
 
 
 def two_nodes_gagge(
-    tdb: float | list[float],
-    tr: float | list[float],
-    v: float | list[float],
-    rh: float | list[float],
-    met: float | list[float],
-    clo: float | list[float],
-    wme: float | list[float] = 0,
-    body_surface_area: float | list[float] = 1.8258,
-    p_atm: float | list[float] = 101325,
+    tdb: NumericInput,
+    tr: NumericInput,
+    v: NumericInput,
+    rh: NumericInput,
+    met: NumericInput,
+    clo: NumericInput,
+    wme: NumericInput = 0,
+    body_surface_area: NumericInput = 1.8258,
+    p_atm: NumericInput = 101325,
     position: str = Postures.standing.value,
-    max_skin_blood_flow: float | list[float] = 90,
+    max_skin_blood_flow: NumericInput = 90,
     round_output: bool = True,
-    max_sweating: float | list[float] = 500,
-    w_max: float | list[float] = False,
+    max_sweating: NumericInput = 500,
+    w_max: NumericInput = False,
     calculate_ce: bool = False,
 ) -> SET | GaggeTwoNodes:
     """Gagge Two-node model of human temperature regulation Gagge et al (1986)

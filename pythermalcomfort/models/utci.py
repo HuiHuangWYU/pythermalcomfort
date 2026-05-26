@@ -3,17 +3,17 @@ from __future__ import annotations
 import numpy as np
 from numba import float64, vectorize
 
-from pythermalcomfort.classes_input import UTCIInputs
+from pythermalcomfort.classes_input import NumericInput, UTCIInputs
 from pythermalcomfort.classes_return import UTCI
 from pythermalcomfort.shared_functions import mapping, valid_range
 from pythermalcomfort.utilities import Units, units_converter
 
 
 def utci(
-    tdb: float | list[float],
-    tr: float | list[float],
-    v: float | list[float],
-    rh: float | list[float],
+    tdb: NumericInput,
+    tr: NumericInput,
+    v: NumericInput,
+    rh: NumericInput,
     units: str = Units.SI.value,
     limit_inputs: bool = True,
     round_output: bool = True,

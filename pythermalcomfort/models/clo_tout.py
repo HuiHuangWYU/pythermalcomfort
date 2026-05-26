@@ -4,13 +4,13 @@ from typing import Literal
 
 import numpy as np
 
-from pythermalcomfort.classes_input import CloTOutInputs
+from pythermalcomfort.classes_input import CloTOutInputs, NumericInput
 from pythermalcomfort.classes_return import CloTOut
 from pythermalcomfort.utilities import Units, units_converter
 
 
 def clo_tout(
-    tout: float | list[float],
+    tout: NumericInput,
     units: Literal["SI", "IP"] = Units.SI.value,
 ) -> CloTOut:
     """Calculate representative clothing insulation Icl based on outdoor air temperature

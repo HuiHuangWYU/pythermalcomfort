@@ -4,13 +4,13 @@ import math
 
 import numpy as np
 
-from pythermalcomfort.classes_input import HIInputs
+from pythermalcomfort.classes_input import HIInputs, NumericInput
 from pythermalcomfort.classes_return import HI
 
 
 def heat_index_lu(
-    tdb: float | list[float],
-    rh: float | list[float],
+    tdb: NumericInput,
+    rh: NumericInput,
     round_output: bool = True,
 ) -> HI:
     """Calculate the Heat Index (HI) in accordance with the Lu and Romps (2022) model

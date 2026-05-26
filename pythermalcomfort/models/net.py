@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import numpy as np
 
-from pythermalcomfort.classes_input import NETInputs
+from pythermalcomfort.classes_input import NETInputs, NumericInput
 from pythermalcomfort.classes_return import NET
 
 
 def net(
-    tdb: float | list[float],
-    rh: float | list[float],
-    v: float | list[float],
+    tdb: NumericInput,
+    rh: NumericInput,
+    v: NumericInput,
     round_output: bool = True,
 ) -> NET:
     """Calculate the Normal Effective Temperature (NET). Missenard (1933)

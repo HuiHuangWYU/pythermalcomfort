@@ -5,7 +5,7 @@ import math
 import numpy as np
 from numba import jit, prange
 
-from pythermalcomfort.classes_input import PHSInputs
+from pythermalcomfort.classes_input import NumericInput, PHSInputs
 from pythermalcomfort.classes_return import PHS
 from pythermalcomfort.shared_functions import valid_range
 from pythermalcomfort.utilities import (
@@ -17,14 +17,14 @@ from pythermalcomfort.utilities import (
 
 
 def phs(
-    tdb: float | list[float],
-    tr: float | list[float],
-    v: float | list[float],
-    rh: float | list[float],
-    met: float | list[float],
-    clo: float | list[float],
+    tdb: NumericInput,
+    tr: NumericInput,
+    v: NumericInput,
+    rh: NumericInput,
+    met: NumericInput,
+    clo: NumericInput,
     posture: str | list[str],
-    wme: float | np.ndarray | list[float] | list[int] = 0,
+    wme: NumericInput = 0,
     round_output: bool = True,
     model: str = Models.iso_7933_2023.value,
     **kwargs,

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from pythermalcomfort.classes_input import RidgeRegressionInputs
+from pythermalcomfort.classes_input import NumericInput, RidgeRegressionInputs
 from pythermalcomfort.classes_return import PredictedBodyTemperatures
 from pythermalcomfort.shared_functions import valid_range
 from pythermalcomfort.utilities import Sex
@@ -192,14 +192,14 @@ def _check_ridge_regression_compliance(
 
 def ridge_regression_predict_t_re_t_sk(
     sex: Sex | str | list[Sex | str],
-    age: float | list[float],
-    height: float | list[float],
-    weight: float | list[float],
-    tdb: float | list[float],
-    rh: float | list[float],
+    age: NumericInput,
+    height: NumericInput,
+    weight: NumericInput,
+    tdb: NumericInput,
+    rh: NumericInput,
     duration: int,
-    t_re: float | list[float] | None = None,
-    t_sk: float | list[float] | None = None,
+    t_re: NumericInput | None = None,
+    t_sk: NumericInput | None = None,
     limit_inputs: bool = True,
     round_output: bool = True,
 ) -> PredictedBodyTemperatures:

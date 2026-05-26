@@ -2,20 +2,20 @@ from __future__ import annotations
 
 import numpy as np
 
-from pythermalcomfort.classes_input import ATHBInputs
+from pythermalcomfort.classes_input import ATHBInputs, NumericInput
 from pythermalcomfort.classes_return import ATHB
 from pythermalcomfort.models._pmv_ppd_optimized import _pmv_ppd_optimized
 from pythermalcomfort.utilities import met_to_w_m2
 
 
 def pmv_athb(
-    tdb: float | list[float],
-    tr: float | list[float],
-    vr: float | list[float],
-    rh: float | list[float],
-    met: float | list[float],
-    t_running_mean: float | list[float],
-    clo: bool | float | list[float] = False,
+    tdb: NumericInput,
+    tr: NumericInput,
+    vr: NumericInput,
+    rh: NumericInput,
+    met: NumericInput,
+    t_running_mean: NumericInput,
+    clo: bool | NumericInput = False,
 ) -> ATHB:
     """Return the PMV value calculated with the Adaptive Thermal Heat Balance Framework
     [Schweiker2022]_. The adaptive thermal heat balance (ATHB) framework introduced a
