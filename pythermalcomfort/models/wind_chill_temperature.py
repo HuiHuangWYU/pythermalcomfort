@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import numpy as np
 
-from pythermalcomfort.classes_input import WCTInputs
+from pythermalcomfort.classes_input import NumericInput, WCTInputs
 from pythermalcomfort.classes_return import WCT
 
 
 def wind_chill_temperature(
-    tdb: float | list[float],
-    v: float | list[float],
+    tdb: NumericInput,
+    v: NumericInput,
     round_output: bool = True,
 ) -> WCT:
     """Calculate the Wind Chill Temperature (`WCT`_).

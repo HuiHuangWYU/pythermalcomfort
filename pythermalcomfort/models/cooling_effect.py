@@ -6,20 +6,20 @@ from typing import Literal
 import numpy as np
 from scipy import optimize
 
-from pythermalcomfort.classes_input import CEInputs
+from pythermalcomfort.classes_input import CEInputs, NumericInput
 from pythermalcomfort.classes_return import CE
 from pythermalcomfort.models.set_tmp import set_tmp
 from pythermalcomfort.utilities import Units, units_converter
 
 
 def cooling_effect(
-    tdb: float | list[float],
-    tr: float | list[float],
-    vr: float | list[float],
-    rh: float | list[float],
-    met: float | list[float],
-    clo: float | list[float],
-    wme: float | list[float] = 0,
+    tdb: NumericInput,
+    tr: NumericInput,
+    vr: NumericInput,
+    rh: NumericInput,
+    met: NumericInput,
+    clo: NumericInput,
+    wme: NumericInput = 0,
     units: Literal["SI", "IP"] = Units.SI.value,
 ) -> CE:
     """Return the value of the Cooling Effect (`CE`_) calculated in compliance with the

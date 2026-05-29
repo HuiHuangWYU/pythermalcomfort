@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import numpy as np
-import numpy.typing as npt
 
-from pythermalcomfort.classes_input import WBGTInputs
+from pythermalcomfort.classes_input import NumericInput, WBGTInputs
 from pythermalcomfort.classes_return import WBGT
 
 
 def wbgt(
-    twb: float | npt.ArrayLike,
-    tg: float | npt.ArrayLike,
-    tdb: float | npt.ArrayLike = None,
+    twb: NumericInput,
+    tg: NumericInput,
+    tdb: NumericInput = None,
     with_solar_load: bool = False,
     round_output: bool = True,
 ) -> WBGT:

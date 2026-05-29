@@ -4,25 +4,25 @@ import numpy as np
 import numpy.typing as npt
 from scipy import optimize
 
-from pythermalcomfort.classes_input import PETSteadyInputs
+from pythermalcomfort.classes_input import NumericInput, PETSteadyInputs
 from pythermalcomfort.classes_return import PETSteady
 from pythermalcomfort.utilities import Postures, Sex, body_surface_area, p_sat
 
 
 def pet_steady(
-    tdb: float | list[float],
-    tr: float | list[float],
-    v: float | list[float],
-    rh: float | list[float],
-    met: float | list[float],
-    clo: float | list[float],
-    p_atm: float | list[float] = 1013.25,
+    tdb: NumericInput,
+    tr: NumericInput,
+    v: NumericInput,
+    rh: NumericInput,
+    met: NumericInput,
+    clo: NumericInput,
+    p_atm: NumericInput = 1013.25,
     position: str | list[str] = Postures.sitting.value,
-    age: int | list[int] = 23,
-    sex: int | list[int] = Sex.male.value,
-    weight: float | list[float] = 75,
-    height: float | list[float] = 1.8,
-    wme: float | list[float] = 0,
+    age: NumericInput = 23,
+    sex: str | np.ndarray | list = Sex.male.value,
+    weight: NumericInput = 75,
+    height: NumericInput = 1.8,
+    wme: NumericInput = 0,
 ) -> PETSteady:
     """Calculate the steady physiological equivalent temperature (PET) using the Munich
     Energy-balance Model for Individuals (MEMI) to simulate the human body's thermal

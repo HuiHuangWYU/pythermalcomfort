@@ -2,20 +2,20 @@ from __future__ import annotations
 
 import numpy as np
 
-from pythermalcomfort.classes_input import VerticalTGradPPDInputs
+from pythermalcomfort.classes_input import NumericInput, VerticalTGradPPDInputs
 from pythermalcomfort.classes_return import VerticalTGradPPD
 from pythermalcomfort.models import pmv_ppd_ashrae
 from pythermalcomfort.utilities import Models, _check_ashrae55_compliance
 
 
 def vertical_tmp_grad_ppd(
-    tdb: float | list[float],
-    tr: float | list[float],
-    vr: float | list[float],
-    rh: float | list[float],
-    met: float | list[float],
-    clo: float | list[float],
-    vertical_tmp_grad: float | list[float],
+    tdb: NumericInput,
+    tr: NumericInput,
+    vr: NumericInput,
+    rh: NumericInput,
+    met: NumericInput,
+    clo: NumericInput,
+    vertical_tmp_grad: NumericInput,
     round_output: bool = True,
     limit_inputs: bool = True,
 ) -> VerticalTGradPPD:

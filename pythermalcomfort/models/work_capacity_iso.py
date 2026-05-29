@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import numpy as np
 
-from pythermalcomfort.classes_input import WorkCapacityStandardsInputs
+from pythermalcomfort.classes_input import NumericInput, WorkCapacityStandardsInputs
 from pythermalcomfort.classes_return import WorkCapacity
 
 
 def work_capacity_iso(
-    wbgt: float | list[float],
-    met: float | list[float],
+    wbgt: NumericInput,
+    met: NumericInput,
 ) -> WorkCapacity:
     """Estimate work capacity due to heat based on ISO standards as described by Brode
     et al.

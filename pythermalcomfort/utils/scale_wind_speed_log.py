@@ -2,16 +2,16 @@ from __future__ import annotations
 
 import numpy as np
 
-from pythermalcomfort.classes_input import ScaleWindSpeedLogInputs
+from pythermalcomfort.classes_input import NumericInput, ScaleWindSpeedLogInputs
 from pythermalcomfort.classes_return import ScaleWindSpeedLog
 
 
 def scale_wind_speed_log(
-    v_z1: float | list[float],
-    z2: float | list[float],
-    z1: float | list[float] = 10.0,
-    z0: float | list[float] = 0.01,
-    d: float | list[float] = 0.0,
+    v_z1: NumericInput,
+    z2: NumericInput,
+    z1: NumericInput = 10.0,
+    z0: NumericInput = 0.01,
+    d: NumericInput = 0.0,
     round_output: bool = True,
 ) -> ScaleWindSpeedLog:
     """Scale wind speed from the reference height to a user specified height using the

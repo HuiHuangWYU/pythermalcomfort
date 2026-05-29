@@ -2,20 +2,21 @@ from __future__ import annotations
 
 import numpy as np
 
-from pythermalcomfort.classes_input import ATInputs
+from pythermalcomfort.classes_input import ATInputs, NumericInput
 from pythermalcomfort.classes_return import AT
 from pythermalcomfort.utilities import psy_ta_rh
 
 
 def at(
-    tdb: float | list[float],
-    rh: float | list[float],
-    v: float | list[float],
-    q: float | list[float] = None,
+    tdb: NumericInput,
+    rh: NumericInput,
+    v: NumericInput,
+    q: NumericInput = None,
     round_output: bool = True,
 ) -> AT:
-    """Calculate the Apparent Temperature (AT). The AT is defined as the temperature at
-    the reference humidity level producing the same amount of discomfort as that
+    """Calculate the Apparent Temperature (AT).
+
+    The AT is defined as the temperature at the reference humidity level producing the same amount of discomfort as that
     experienced under the current ambient temperature, humidity, and solar radiation
     [Steadman1984]_. In other words, the AT is an adjustment to the dry bulb temperature
     based on the relative humidity value. Absolute humidity with a dew point of 14°C is

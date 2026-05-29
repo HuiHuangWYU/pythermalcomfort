@@ -11,6 +11,8 @@ from numpy.typing import NDArray
 from pythermalcomfort.classes_return import PsychrometricValues
 from pythermalcomfort.shared_functions import _format_violation_detail, valid_range
 
+NumericInput = float | int | np.ndarray | list
+
 warnings.simplefilter("always")
 
 
@@ -48,7 +50,7 @@ class Sex(Enum):
     female = "female"
 
 
-def p_sat_torr(tdb: float | list[float]) -> NDArray[np.float64]:
+def p_sat_torr(tdb: NumericInput) -> NDArray[np.float64]:
     """Estimates the saturation vapor pressure in [torr].
 
     Parameters
@@ -66,8 +68,8 @@ def p_sat_torr(tdb: float | list[float]) -> NDArray[np.float64]:
 
 
 def enthalpy_air(
-    tdb: float | list[float] | NDArray[np.float64],
-    hr: float | list[float] | NDArray[np.float64],
+    tdb: NumericInput,
+    hr: NumericInput,
 ) -> NDArray[np.float64]:
     """Calculate air enthalpy_air.
 
@@ -90,7 +92,7 @@ def enthalpy_air(
     return h_dry_air + hr * h_sat_vap
 
 
-def p_sat(tdb: float | list[float] | NDArray[np.float64]) -> NDArray[np.float64]:
+def p_sat(tdb: NumericInput) -> NDArray[np.float64]:
     """Calculate vapour pressure of water at different temperatures.
 
     Parameters
@@ -136,7 +138,7 @@ def p_sat(tdb: float | list[float] | NDArray[np.float64]) -> NDArray[np.float64]
     )
 
 
-def antoine(tdb: float | list[float]) -> NDArray[np.float64]:
+def antoine(tdb: NumericInput) -> NDArray[np.float64]:
     """Calculate saturated vapor pressure using Antoine equation [kPa].
 
     Parameters
@@ -154,8 +156,8 @@ def antoine(tdb: float | list[float]) -> NDArray[np.float64]:
 
 
 def psy_ta_rh(
-    tdb: float | list[float],
-    rh: float | list[float],
+    tdb: NumericInput,
+    rh: NumericInput,
     p_atm: float = 101325,
 ) -> PsychrometricValues:
     """Calculate psychrometric values of air based on dry bulb air temperature and
@@ -210,8 +212,8 @@ def psy_ta_rh(
 
 
 def wet_bulb_tmp(
-    tdb: float | list[float] | NDArray[np.float64],
-    rh: float | list[float] | NDArray[np.float64],
+    tdb: NumericInput,
+    rh: NumericInput,
 ) -> NDArray[np.float64]:
     """Calculate the wet-bulb temperature using the Stull equation [Stull2011]_.
 
@@ -240,8 +242,8 @@ def wet_bulb_tmp(
 
 
 def dew_point_tmp(
-    tdb: float | list[float] | NDArray[np.float64],
-    rh: float | list[float] | NDArray[np.float64],
+    tdb: NumericInput,
+    rh: NumericInput,
 ) -> NDArray[np.float64]:
     """Calculate the dew point temperature.
 
@@ -287,11 +289,11 @@ def dew_point_tmp(
 
 
 def mean_radiant_tmp(
-    tg: float | list[float],
-    tdb: float | list[float],
-    v: float | list[float],
-    d: float | list[float] = 0.15,
-    emissivity: float | list[float] = 0.95,
+    tg: NumericInput,
+    tdb: NumericInput,
+    v: NumericInput,
+    d: NumericInput = 0.15,
+    emissivity: NumericInput = 0.95,
     standard="Mixed Convection",
 ) -> NDArray[np.float64]:
     """Convert the globe temperature reading into mean radiant temperature in accordance
@@ -642,8 +644,8 @@ def f_svv(w: float, h: float, d: float) -> float:
 
 
 def v_relative(
-    v: float | list[float] | NDArray[np.float64],
-    met: float | list[float] | NDArray[np.float64],
+    v: NumericInput,
+    met: NumericInput,
 ) -> NDArray[np.float64]:
     """Estimates the relative air speed which combines the average air speed of the
     space plus the relative air speed caused by the body movement. The same equation is
@@ -667,8 +669,8 @@ def v_relative(
 
 
 def clo_dynamic_ashrae(
-    clo: float | list[float],
-    met: float | list[float],
+    clo: NumericInput,
+    met: NumericInput,
     model: str = Models.ashrae_55_2023.value,
 ) -> np.ndarray:
     """Estimates the dynamic intrinsic clothing insulation (I :sub:`cl,r`).
@@ -713,10 +715,10 @@ def clo_dynamic_ashrae(
 
 
 def clo_dynamic_iso(
-    clo: float | list[float],
-    met: float | list[float],
-    v: float | list[float],
-    i_a: float | list[float] = 0.7,
+    clo: NumericInput,
+    met: NumericInput,
+    v: NumericInput,
+    i_a: NumericInput = 0.7,
     model: str = Models.iso_9920_2007.value,
 ) -> np.ndarray:
     """Estimates the dynamic intrinsic clothing insulation (I :sub:`cl,r`).
@@ -945,9 +947,9 @@ def units_converter(from_units=Units.IP.value, **kwargs) -> list[float]:
 
 
 def operative_tmp(
-    tdb: float | list[float],
-    tr: float | list[float],
-    v: float | list[float],
+    tdb: NumericInput,
+    tr: NumericInput,
+    v: NumericInput,
     standard: str = "ISO",
 ) -> NDArray[np.float64]:
     """Calculate the operative temperature in accordance with ISO 7726:1998
@@ -987,7 +989,7 @@ def operative_tmp(
 
 
 def clo_intrinsic_insulation_ensemble(
-    clo_garments: float | list[float],
+    clo_garments: NumericInput,
 ) -> float:
     """Calculate the intrinsic insulation of a clothing ensemble based on individual
     garments.
@@ -1011,7 +1013,7 @@ def clo_intrinsic_insulation_ensemble(
 
 
 def clo_area_factor(
-    i_cl: float | list[float] | NDArray[np.float64],
+    i_cl: NumericInput,
 ) -> NDArray[np.float64]:
     """Calculate the clothing area factor (f_cl) of the clothing ensemble as a function
     of the intrinsic insulation of the clothing ensemble. This equation is in accordance
@@ -1036,9 +1038,9 @@ def clo_area_factor(
 
 # TODO implement the vr and v_walk functions as a function of the met
 def clo_insulation_air_layer(
-    vr: float | list[float] | NDArray[np.float64],
-    v_walk: float | list[float] | NDArray[np.float64],
-    i_a_static: float | list[float] | NDArray[np.float64],
+    vr: NumericInput,
+    v_walk: NumericInput,
+    i_a_static: NumericInput,
 ) -> NDArray[np.float64]:
     """Calculate the insulation of the boundary air layer (`I`:sub:`a,r`).
 
@@ -1080,11 +1082,11 @@ def clo_insulation_air_layer(
 
 
 def clo_total_insulation(
-    i_t: float | list[float] | NDArray[np.float64],
-    vr: float | list[float] | NDArray[np.float64],
-    v_walk: float | list[float] | NDArray[np.float64],
-    i_a_static: float | list[float] | NDArray[np.float64],
-    i_cl: float | list[float] | NDArray[np.float64],
+    i_t: NumericInput,
+    vr: NumericInput,
+    v_walk: NumericInput,
+    i_a_static: NumericInput,
+    i_cl: NumericInput,
 ) -> NDArray[np.float64]:
     """Calculate the total insulation of the clothing ensemble (`I`:sub:`T,r`).
 
@@ -1149,9 +1151,9 @@ def clo_total_insulation(
 
 
 def clo_correction_factor_environment(
-    vr: float | list[float],
-    v_walk: float | list[float],
-    i_cl: float | list[float],
+    vr: NumericInput,
+    v_walk: NumericInput,
+    i_cl: NumericInput,
 ) -> NDArray[np.float64]:
     """Return the correction factor for the total insulation of the clothing ensemble
     (`I`:sub:`T`) or the basic/intrinsic insulation (`I`:sub:`cl`).

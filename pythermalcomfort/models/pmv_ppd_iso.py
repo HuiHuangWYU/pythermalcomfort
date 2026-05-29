@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from pythermalcomfort.classes_input import PMVPPDInputs
+from pythermalcomfort.classes_input import NumericInput, PMVPPDInputs
 from pythermalcomfort.classes_return import PMVPPD
 from pythermalcomfort.models._pmv_ppd_optimized import _pmv_ppd_optimized
 from pythermalcomfort.shared_functions import mapping, valid_range
@@ -14,13 +14,13 @@ from pythermalcomfort.utilities import (
 
 
 def pmv_ppd_iso(
-    tdb: float | list[float],
-    tr: float | list[float],
-    vr: float | list[float],
-    rh: float | list[float],
-    met: float | list[float],
-    clo: float | list[float],
-    wme: float | list[float] = 0,
+    tdb: NumericInput,
+    tr: NumericInput,
+    vr: NumericInput,
+    rh: NumericInput,
+    met: NumericInput,
+    clo: NumericInput,
+    wme: NumericInput = 0,
     model: str = Models.iso_7730_2005.value,
     units: str = Units.SI.value,
     limit_inputs: bool = True,

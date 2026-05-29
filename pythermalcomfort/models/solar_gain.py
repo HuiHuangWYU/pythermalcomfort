@@ -4,21 +4,21 @@ import math
 
 import numpy as np
 
-from pythermalcomfort.classes_input import SolarGainInputs
+from pythermalcomfort.classes_input import NumericInput, SolarGainInputs
 from pythermalcomfort.classes_return import SolarGain
 from pythermalcomfort.utilities import Postures, transpose_sharp_altitude
 
 
 def solar_gain(
-    sol_altitude: float | list[float],
-    sharp: float | list[float],
-    sol_radiation_dir: float | list[float],
-    sol_transmittance: float | list[float],
-    f_svv: float | list[float],
-    f_bes: float | list[float],
-    asw: float | list[float] = 0.7,
+    sol_altitude: NumericInput,
+    sharp: NumericInput,
+    sol_radiation_dir: NumericInput,
+    sol_transmittance: NumericInput,
+    f_svv: NumericInput,
+    f_bes: NumericInput,
+    asw: NumericInput = 0.7,
     posture: str = Postures.sitting.value,
-    floor_reflectance: float | list[float] = 0.6,
+    floor_reflectance: NumericInput = 0.6,
     round_output: bool = True,
 ) -> SolarGain:
     """Calculate the solar gain to the human body using the Effective Radiant Field

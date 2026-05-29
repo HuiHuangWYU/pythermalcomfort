@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import numpy as np
 
-from pythermalcomfort.classes_input import WorkCapacityHothapsInputs, WorkIntensity
+from pythermalcomfort.classes_input import (
+    NumericInput,
+    WorkCapacityHothapsInputs,
+    WorkIntensity,
+)
 from pythermalcomfort.classes_return import WorkCapacity
 
 
 def work_capacity_dunne(
-    wbgt: float | list[float],
+    wbgt: NumericInput,
     work_intensity: str = WorkIntensity.HEAVY.value,
 ) -> WorkCapacity:
     """Estimate work capacity due to heat based on Dunne et al [Dunne2013]_.

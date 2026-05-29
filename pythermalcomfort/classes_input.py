@@ -10,9 +10,8 @@ if TYPE_CHECKING:
 
 import numpy as np
 
-from pythermalcomfort.utilities import Postures, Sex, Units, validate_type
+from pythermalcomfort.utilities import NumericInput, Postures, Sex, Units, validate_type
 
-NumericInput = float | int | np.ndarray | list
 _NUMERIC_TYPES = NumericInput.__args__
 
 

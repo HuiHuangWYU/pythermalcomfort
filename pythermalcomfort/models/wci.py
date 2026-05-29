@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import numpy as np
 
-from pythermalcomfort.classes_input import WCIInputs
+from pythermalcomfort.classes_input import NumericInput, WCIInputs
 from pythermalcomfort.classes_return import WCI
 
 
 def wci(
-    tdb: float | list[float],
-    v: float | list[float],
+    tdb: NumericInput,
+    v: NumericInput,
     round_output: bool = True,
 ) -> WCI:
     """Calculate the Wind Chill Index (WCI) in accordance with the ASHRAE 2017 Handbook Fundamentals - Chapter 9 [ashrae2017]_.
