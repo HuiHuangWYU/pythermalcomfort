@@ -240,8 +240,8 @@ def hr_to_rh(
         relative humidity, [%]
 
     """
-    hr = np.asarray(hr)
-    tdb = np.asarray(tdb)
+    hr = np.asarray(hr, dtype=np.float64)
+    tdb = np.asarray(tdb, dtype=np.float64)
     p_vap = hr * p_atm / (0.62198 + hr)
     return p_vap / p_sat(tdb) * 100.0
 
