@@ -9,7 +9,7 @@ from pythermalcomfort.classes_return import WBGT
 def wbgt(
     twb: NumericInput,
     tg: NumericInput,
-    tdb: NumericInput = None,
+    tdb: NumericInput | None = None,
     with_solar_load: bool = False,
     round_output: bool = True,
 ) -> WBGT:

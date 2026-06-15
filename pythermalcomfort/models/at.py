@@ -11,7 +11,7 @@ def at(
     tdb: NumericInput,
     rh: NumericInput,
     v: NumericInput,
-    q: NumericInput = None,
+    q: NumericInput | None = None,
     round_output: bool = True,
 ) -> AT:
     """Calculate the Apparent Temperature (AT).
