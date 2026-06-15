@@ -1,3 +1,4 @@
+from pythermalcomfort.plots.matplotlib._shared import BasePlotResult
 from pythermalcomfort.plots.matplotlib.adaptive import (
     AdaptivePlot,
     AdaptivePlotResult,
@@ -11,6 +12,7 @@ from pythermalcomfort.plots.matplotlib.threshold import (
 )
 
 __all__ = [
+    "BasePlotResult",
     "ThresholdPlot",
     "ThresholdPlotResult",
     "SummaryPlot",
