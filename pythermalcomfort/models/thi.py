@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import numpy as np
 
-from pythermalcomfort.classes_input import THIInputs
+from pythermalcomfort.classes_input import NumericInput, THIInputs
 from pythermalcomfort.classes_return import THI
 
 
 def thi(
-    tdb: float | list[float],
-    rh: float | list[float],
+    tdb: NumericInput,
+    rh: NumericInput,
     round_output: bool = True,
 ) -> THI:
     """Calculate the Temperature-Humidity Index (THI) defined in [Yan2025]_, equivalent

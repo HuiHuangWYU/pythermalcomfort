@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import numpy as np
 
-from pythermalcomfort.classes_input import ESIInputs
+from pythermalcomfort.classes_input import ESIInputs, NumericInput
 from pythermalcomfort.classes_return import ESI
 
 
 def esi(
-    tdb: float | list[float],
-    rh: float | list[float],
-    sol_radiation_global: float | list[float],
+    tdb: NumericInput,
+    rh: NumericInput,
+    sol_radiation_global: NumericInput,
     round_output: bool = True,
 ) -> ESI:
     """Calculate the Environmental Stress Index (ESI) [Moran2001]_.

@@ -4,21 +4,21 @@ import math
 
 import numpy as np
 
-from pythermalcomfort.classes_input import GaggeTwoNodesJiInputs
+from pythermalcomfort.classes_input import GaggeTwoNodesJiInputs, NumericInput
 from pythermalcomfort.classes_return import GaggeTwoNodesJi
 from pythermalcomfort.utilities import Postures
 
 
 def two_nodes_gagge_ji(
-    tdb: float | list[float],
-    tr: float | list[float],
-    v: float | list[float],
-    met: float | list[float],
-    clo: float | list[float],
-    vapor_pressure: float | list[float],
-    wme: float | list[float] = 0,
-    body_surface_area: float | list[float] = 1.8258,
-    p_atm: float | list[float] = 101325,
+    tdb: NumericInput,
+    tr: NumericInput,
+    v: NumericInput,
+    met: NumericInput,
+    clo: NumericInput,
+    vapor_pressure: NumericInput,
+    wme: NumericInput = 0,
+    body_surface_area: NumericInput = 1.8258,
+    p_atm: NumericInput = 101325,
     position: str = Postures.sitting.value,
     **kwargs,
 ) -> GaggeTwoNodesJi:

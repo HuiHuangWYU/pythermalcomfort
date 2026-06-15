@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from pythermalcomfort.classes_input import PMVPPDInputs
+from pythermalcomfort.classes_input import NumericInput, PMVPPDInputs
 from pythermalcomfort.classes_return import PMVPPDAshrae
 from pythermalcomfort.models._pmv_ppd_optimized import _pmv_ppd_optimized
 from pythermalcomfort.models.cooling_effect import cooling_effect
@@ -16,13 +16,13 @@ from pythermalcomfort.utilities import (
 
 
 def pmv_ppd_ashrae(
-    tdb: float | list[float],
-    tr: float | list[float],
-    vr: float | list[float],
-    rh: float | list[float],
-    met: float | list[float],
-    clo: float | list[float],
-    wme: float | list[float] = 0,
+    tdb: NumericInput,
+    tr: NumericInput,
+    vr: NumericInput,
+    rh: NumericInput,
+    met: NumericInput,
+    clo: NumericInput,
+    wme: NumericInput = 0,
     model: str = Models.ashrae_55_2023.value,
     units: str = Units.SI.value,
     limit_inputs: bool = True,

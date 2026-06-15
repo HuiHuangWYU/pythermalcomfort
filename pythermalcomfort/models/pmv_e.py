@@ -2,21 +2,21 @@ from __future__ import annotations
 
 import numpy as np
 
-from pythermalcomfort.classes_input import EPMVInputs
+from pythermalcomfort.classes_input import EPMVInputs, NumericInput
 from pythermalcomfort.classes_return import EPMV
 from pythermalcomfort.models.pmv_ppd_iso import pmv_ppd_iso
 from pythermalcomfort.utilities import Models, Units
 
 
 def pmv_e(
-    tdb: float | list[float],
-    tr: float | list[float],
-    vr: float | list[float],
-    rh: float | list[float],
-    met: float | list[float],
-    clo: float | list[float],
-    e_coefficient: float | list[float],
-    wme: float | list[float] = 0,
+    tdb: NumericInput,
+    tr: NumericInput,
+    vr: NumericInput,
+    rh: NumericInput,
+    met: NumericInput,
+    clo: NumericInput,
+    e_coefficient: NumericInput,
+    wme: NumericInput = 0,
     units: str = Units.SI.value,
     limit_inputs: bool = True,
 ) -> EPMV:

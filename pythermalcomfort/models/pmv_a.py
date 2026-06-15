@@ -4,21 +4,21 @@ from typing import Literal
 
 import numpy as np
 
-from pythermalcomfort.classes_input import APMVInputs
+from pythermalcomfort.classes_input import APMVInputs, NumericInput
 from pythermalcomfort.classes_return import APMV
 from pythermalcomfort.models.pmv_ppd_iso import pmv_ppd_iso
 from pythermalcomfort.utilities import Models, Units
 
 
 def pmv_a(
-    tdb: float | list[float],
-    tr: float | list[float],
-    vr: float | list[float],
-    rh: float | list[float],
-    met: float | list[float],
-    clo: float | list[float],
+    tdb: NumericInput,
+    tr: NumericInput,
+    vr: NumericInput,
+    rh: NumericInput,
+    met: NumericInput,
+    clo: NumericInput,
     a_coefficient: float,
-    wme: float | list[float] = 0,
+    wme: NumericInput = 0,
     units: Literal["SI", "IP"] = Units.SI.value,
     limit_inputs: bool = True,
 ) -> APMV:

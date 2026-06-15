@@ -2,22 +2,26 @@ from typing import Literal
 
 import numpy as np
 
-from pythermalcomfort.classes_input import ASHRAEInputs
+from pythermalcomfort.classes_input import ASHRAEInputs, NumericInput
 from pythermalcomfort.classes_return import AdaptiveASHRAE
 from pythermalcomfort.shared_functions import valid_range
 from pythermalcomfort.utilities import (
     Units,
     _check_ashrae55_compliance,
+    adaptive_cooling_effect,
     operative_tmp,
     units_converter,
 )
 
+SLOPE: float = 0.31
+INTERCEPT: float = 17.8
+
 
 def adaptive_ashrae(
-    tdb: float | list[float],
-    tr: float | list[float],
-    t_running_mean: float | list[float],
-    v: float | list[float],
+    tdb: NumericInput,
+    tr: NumericInput,
+    t_running_mean: NumericInput,
+    v: NumericInput,
     units: Literal["SI", "IP"] = Units.SI.value,
     limit_inputs: bool = True,
     round_output: bool = True,
@@ -124,14 +128,9 @@ def adaptive_ashrae(
 
     to = operative_tmp(tdb, tr, v, standard=standard)
 
-    # Calculate cooling effect (ce) of elevated air speed when top > 25 degC.
-    ce = np.where((v >= 0.6) & (to >= 25.0), 999, 0)
-    ce = np.where((v < 0.9) & (ce == 999), 1.2, ce)
-    ce = np.where((v < 1.2) & (ce == 999), 1.8, ce)
-    ce = np.where(ce == 999, 2.2, ce)
+    ce = adaptive_cooling_effect(v, to)
 
-    # Relation between comfort and outdoor temperature
-    t_cmf = 0.31 * t_running_mean + 17.8
+    t_cmf = SLOPE * t_running_mean + INTERCEPT
 
     if limit_inputs:
         tdb_valid, tr_valid, v_valid = _check_ashrae55_compliance(

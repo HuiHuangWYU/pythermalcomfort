@@ -4,17 +4,17 @@ import math
 
 import numpy as np
 
-from pythermalcomfort.classes_input import GaggeTwoNodesSleepInputs
+from pythermalcomfort.classes_input import GaggeTwoNodesSleepInputs, NumericInput
 from pythermalcomfort.classes_return import GaggeTwoNodesSleep
 
 
 def two_nodes_gagge_sleep(
-    tdb: float | list[float],
-    tr: float | list[float],
-    v: float | list[float],
-    rh: float | list[float],
-    clo: float | list[float],
-    thickness_quilt: float | list[float],
+    tdb: NumericInput,
+    tr: NumericInput,
+    v: NumericInput,
+    rh: NumericInput,
+    clo: NumericInput,
+    thickness_quilt: NumericInput,
     wme: float = 0,
     p_atm: float = 101325,
     **kwargs,

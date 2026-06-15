@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from pythermalcomfort.classes_input import AnkleDraftInputs
+from pythermalcomfort.classes_input import AnkleDraftInputs, NumericInput
 from pythermalcomfort.classes_return import AnkleDraft
 from pythermalcomfort.models.pmv_ppd_ashrae import pmv_ppd_ashrae
 from pythermalcomfort.utilities import (
@@ -14,13 +14,13 @@ from pythermalcomfort.utilities import (
 
 
 def ankle_draft(
-    tdb: float | list[float],
-    tr: float | list[float],
-    vr: float | list[float],
-    rh: float | list[float],
-    met: float | list[float],
-    clo: float | list[float],
-    v_ankle: float | list[float],
+    tdb: NumericInput,
+    tr: NumericInput,
+    vr: NumericInput,
+    rh: NumericInput,
+    met: NumericInput,
+    clo: NumericInput,
+    v_ankle: NumericInput,
     units: str = Units.SI.value,
     limit_inputs: bool = True,
 ) -> AnkleDraft:

@@ -4,7 +4,7 @@ from dataclasses import asdict
 
 import numpy as np
 
-from pythermalcomfort.classes_input import UseFansHeatwavesInputs
+from pythermalcomfort.classes_input import NumericInput, UseFansHeatwavesInputs
 from pythermalcomfort.classes_return import UseFansHeatwaves
 from pythermalcomfort.models.two_nodes_gagge import two_nodes_gagge
 from pythermalcomfort.shared_functions import valid_range
@@ -12,15 +12,15 @@ from pythermalcomfort.utilities import Postures
 
 
 def use_fans_heatwaves(
-    tdb: float | list[float],
-    tr: float | list[float],
-    v: float | list[float],
-    rh: float | list[float],
-    met: float | list[float],
-    clo: float | list[float],
-    wme: float | list[float] = 0,
-    body_surface_area: float | list[float] = 1.8258,
-    p_atm: float | list[float] = 101325,
+    tdb: NumericInput,
+    tr: NumericInput,
+    v: NumericInput,
+    rh: NumericInput,
+    met: NumericInput,
+    clo: NumericInput,
+    wme: NumericInput = 0,
+    body_surface_area: NumericInput = 1.8258,
+    p_atm: NumericInput = 101325,
     position: str = Postures.standing.value,
     max_skin_blood_flow: float = 80,
     max_sweating: float = 500,
