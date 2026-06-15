@@ -1,0 +1,18 @@
+version: 2
+
+build:
+  os: ubuntu-24.04
+  tools:
+    python: "3.11"
+
+sphinx:
+  configuration: docs/conf.py
+
+# Only build HTML — skips the latexmk PDF build which requires a full LaTeX install.
+formats: []
+
+python:
+  install:
+    - requirements: docs/requirements.txt
+    - method: pip
+      path: .

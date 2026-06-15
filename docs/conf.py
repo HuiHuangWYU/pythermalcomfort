@@ -39,6 +39,8 @@ linkcheck_ignore = [
     r"https://www\.linkedin\.com/.*",
     # Snyk badge URL has moved; the target URL no longer resolves to a badge.
     r"https://snyk\.io/advisor/python/pythermalcomfort/badge\.svg",
+    # Consistently times out in CI.
+    r"https://adaptecca\.es/.*",
 ]
 pygments_style = "trac"
 templates_path = ["."]
