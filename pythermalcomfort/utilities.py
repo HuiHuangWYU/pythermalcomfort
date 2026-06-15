@@ -212,10 +212,10 @@ def psy_ta_rh(
 
 
 def hr_to_rh(
-    hr: float | list[float],
-    tdb: float | list[float],
+    hr: NumericInput,
+    tdb: NumericInput,
     p_atm: float = 101325,
-) -> float | list[float]:
+) -> NDArray[np.float64]:
     """Convert humidity ratio to relative humidity.
 
     Algebraic inverse of the humidity-ratio formula used in :func:`psy_ta_rh`:
@@ -240,8 +240,8 @@ def hr_to_rh(
         relative humidity, [%]
 
     """
-    hr = np.asarray(hr)
-    tdb = np.asarray(tdb)
+    hr = np.asarray(hr, dtype=np.float64)
+    tdb = np.asarray(tdb, dtype=np.float64)
     p_vap = hr * p_atm / (0.62198 + hr)
     return p_vap / p_sat(tdb) * 100.0
 
@@ -1024,9 +1024,9 @@ def operative_tmp(
 
 
 def adaptive_cooling_effect(
-    v: float | list[float],
-    to: float | list[float],
-) -> float | list[float]:
+    v: NumericInput,
+    to: NumericInput,
+) -> NDArray[np.float64]:
     """Return the adaptive model cooling effect for a given air speed and operative temperature.
 
     The cooling effect is non-zero only when operative temperature is at or
@@ -1044,8 +1044,8 @@ def adaptive_cooling_effect(
     ce : float or ndarray
         Cooling effect magnitude, [°C].
     """
-    v = np.asarray(v, dtype=float)
-    to = np.asarray(to, dtype=float)
+    v = np.asarray(v, dtype=np.float64)
+    to = np.asarray(to, dtype=np.float64)
     magnitude = np.where(
         v >= 1.2, 2.2, np.where(v >= 0.9, 1.8, np.where(v >= 0.6, 1.2, 0.0))
     )
