@@ -1044,8 +1044,8 @@ def adaptive_cooling_effect(
     ce : float or ndarray
         Cooling effect magnitude, [°C].
     """
-    v = np.asarray(v, dtype=float)
-    to = np.asarray(to, dtype=float)
+    v = np.asarray(v, dtype=np.float64)
+    to = np.asarray(to, dtype=np.float64)
     magnitude = np.where(
         v >= 1.2, 2.2, np.where(v >= 0.9, 1.8, np.where(v >= 0.6, 1.2, 0.0))
     )
