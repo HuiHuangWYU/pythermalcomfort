@@ -26,13 +26,11 @@ from pythermalcomfort.plots.matplotlib._shared import (
 class BasePlot(ABC):
     """Abstract base for all pythermalcomfort Matplotlib plot classes.
 
-    Provides the shared :meth:`set_regions` implementation and enforces the
-    :meth:`plot` contract via :func:`~abc.abstractmethod`.
+    Enforces the :meth:`plot` contract via :func:`~abc.abstractmethod`.
+    Each concrete subclass owns its own :meth:`set_regions` with a signature
+    appropriate to its domain.
 
-    Subclasses must implement :meth:`plot`.  They may override
-    :meth:`set_regions` to add input-specific validation (e.g. DataFrame
-    column checks in :class:`~pythermalcomfort.plots.matplotlib.SummaryPlot`)
-    before delegating to this base implementation via ``super()``.
+    Subclasses must implement :meth:`plot`.
     """
 
     def __init__(self) -> None:
