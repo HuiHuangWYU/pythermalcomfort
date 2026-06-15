@@ -138,7 +138,7 @@ class PsychrometricPlot(ThresholdPlot):
             )
             raise ValueError(msg)
         if self._x_axis is not None and name == self._x_axis.name:
-            raise ValueError("x and y axis parameters must be different. ")
+            raise ValueError("x and y axis parameters must be different.")
 
         min_float, max_float = _parse_axis_range(min_val, max_val)
         resolution_float = _validate_resolution(resolution)
