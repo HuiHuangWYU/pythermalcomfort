@@ -30,7 +30,7 @@ def read(*names: str, encoding: str = "utf8") -> str:
 
 setup(
     name="pythermalcomfort",
-    version="3.9.8",
+    version="4.0.0",
     license="MIT",
     description=(
         "pythermalcomfort is a comprehensive toolkit for calculating "
@@ -105,7 +105,15 @@ setup(
         "setuptools",
     ],
     extras_require={
-        "dev": ["pytest", "sphinx", "ruff", "docformatter", "matplotlib>=3.8", "pandas", "seaborn>=0.13"],
+        "dev": [
+            "pytest",
+            "sphinx",
+            "ruff",
+            "docformatter",
+            "matplotlib>=3.8",
+            "pandas",
+            "seaborn>=0.13",
+        ],
         "plots": ["matplotlib>=3.8", "pandas", "seaborn>=0.13"],
     },
     entry_points={
