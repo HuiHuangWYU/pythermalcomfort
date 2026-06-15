@@ -212,10 +212,10 @@ def psy_ta_rh(
 
 
 def hr_to_rh(
-    hr: float | list[float],
-    tdb: float | list[float],
+    hr: NumericInput,
+    tdb: NumericInput,
     p_atm: float = 101325,
-) -> float | list[float]:
+) -> NDArray[np.float64]:
     """Convert humidity ratio to relative humidity.
 
     Algebraic inverse of the humidity-ratio formula used in :func:`psy_ta_rh`:
