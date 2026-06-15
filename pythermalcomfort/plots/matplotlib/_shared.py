@@ -6,6 +6,7 @@ import inspect
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from numbers import Number
+from types import MappingProxyType
 from typing import Any
 
 import numpy as np
@@ -75,7 +76,7 @@ class _PlotDefaults:
 
     # ── shared across all plot types ───────────────────────────────────────
     color_out_of_model: str = "#bdbdbd"
-    parameter_links: dict = {"tr": "tdb", "tdb": "tr"}
+    parameter_links: MappingProxyType = MappingProxyType({"tr": "tdb", "tdb": "tr"})
     figsize: tuple = (7, 4)
     fill_alpha: float = 1.0
     title_fontsize: int = 13
@@ -100,11 +101,13 @@ class _PlotDefaults:
 
         n_points: int = 200
         center_line_label: str = "Comfort Temperature"
-        center_line_defaults: dict = {
-            "color": "#333333",
-            "linewidth": 1.5,
-            "linestyle": "--",
-        }
+        center_line_defaults: MappingProxyType = MappingProxyType(
+            {
+                "color": "#333333",
+                "linewidth": 1.5,
+                "linestyle": "--",
+            }
+        )
         legend_loc: str = "lower right"
         # fixme the legend height in this plot is not the same as in the psychrometric chart
         legend_ncol: int = 3
