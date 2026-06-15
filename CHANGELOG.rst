@@ -1,6 +1,47 @@
 Changelog
 =========
 
+3.9.8 (2026-05-25)
+------------------
+
+* Added optional ``round_output`` parameter to ``adaptive_ashrae`` and ``adaptive_en``
+  to control rounding of output values.
+* Added ``limit_inputs`` parameter to ``ankle_draft`` and ``vertical_tmp_grad_ppd``,
+  consistent with other model functions.
+* ``ankle_draft`` and ``vertical_tmp_grad_ppd`` now raise ``UserWarning`` when inputs
+  exceed model applicability limits.
+* Fixed ``compliance`` attribute being included in non-ASHRAE PMV model outputs;
+  it is now only returned by ``pmv_ppd_ashrae``.
+* Fixed UTCI stress category mapping when ``units="IP"``; categories were
+  incorrectly mapped before IP unit conversion.
+
+3.9.3 (2026-05-01)
+------------------
+
+* Maintenance release: internal CI pipeline improvements and dependency updates.
+  No user-facing changes.
+
+3.9.2 (2026-04-14)
+------------------
+
+* Updated `sports_heat_stress_risk` so `risk_level_interpolated` now uses `1.0-4.0` instead of `0.0-3.0`.
+* Updated `sports_heat_stress_risk` to enforce the sport-specific minimum air speed (`sport.vr`).
+
+3.9.1 (2026-02-25)
+------------------
+
+* Improved speed of PHS model.
+
+3.9.0 (2026-02-03)
+------------------
+
+* Added `sports_heat_stress_risk` function to assess heat stress risk for athletes during outdoor sports activities based on environmental conditions. Addresses issue #237.
+
+3.7.0 (2025-10-28)
+------------------
+
+* Added machine learning model to predict skin and rectal temperature `ridge_regression_predict_t_re_t_sk`.
+
 3.6.1 (2025-10-07)
 ------------------
 

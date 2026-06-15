@@ -5,7 +5,7 @@ import numpy as np
 from pythermalcomfort.classes_input import VerticalTGradPPDInputs
 from pythermalcomfort.classes_return import VerticalTGradPPD
 from pythermalcomfort.models import pmv_ppd_ashrae
-from pythermalcomfort.utilities import Models, _check_standard_compliance_array
+from pythermalcomfort.utilities import Models, _check_ashrae55_compliance
 
 
 def vertical_tmp_grad_ppd(
@@ -17,10 +17,11 @@ def vertical_tmp_grad_ppd(
     clo: float | list[float],
     vertical_tmp_grad: float | list[float],
     round_output: bool = True,
+    limit_inputs: bool = True,
 ) -> VerticalTGradPPD:
-    """Calculate the percentage of thermally dissatisfied people with a
-    vertical temperature gradient between feet and head [55ASHRAE2023]_. This equation is
-    only applicable for vr < 0.2 m/s (40 fps).
+    """Calculate the percentage of thermally dissatisfied people with a vertical
+    temperature gradient between feet and head [55ASHRAE2023]_. This equation is only
+    applicable for vr < 0.2 m/s (40 fps).
 
     Parameters
     ----------
@@ -64,6 +65,12 @@ def vertical_tmp_grad_ppd(
         Vertical temperature gradient between the feet and the head, [°C/m].
     round_output : bool, optional
         If True, rounds output value. If False, it does not round it. Defaults to True.
+    limit_inputs : bool, optional
+        By default, if the inputs are outside the standard applicability limits the
+        function returns nan. If False, returns values even if input values are
+        outside the applicability limits of the model. Defaults to True. The
+        applicability limits are 10 < tdb [°C] < 40, 10 < tr [°C] < 40,
+        0 < vr [m/s] < 0.2, 1 < met [met] < 4, and 0 < clo [clo] < 1.5.
 
     Returns
     -------
@@ -83,7 +90,6 @@ def vertical_tmp_grad_ppd(
         )
         print(result.ppd_vg)  # 12.6
         print(result.acceptability)  # False
-
     """
     # Validate inputs using the VerticalTmpGradPPDInputs class
     VerticalTGradPPDInputs(
@@ -94,6 +100,7 @@ def vertical_tmp_grad_ppd(
         met=met,
         clo=clo,
         vertical_tmp_grad=vertical_tmp_grad,
+        limit_inputs=limit_inputs,
     )
 
     tdb = np.asarray(tdb)
@@ -103,21 +110,6 @@ def vertical_tmp_grad_ppd(
     clo = np.asarray(clo)
     vertical_tmp_grad = np.asarray(vertical_tmp_grad)
 
-    (
-        tdb_valid,
-        tr_valid,
-        v_valid,
-        met_valid,
-        clo_valid,
-    ) = _check_standard_compliance_array(
-        standard=Models.ashrae_55_2023.value,
-        tdb=tdb,
-        tr=tr,
-        v_limited=vr,
-        met=met,
-        clo=clo,
-    )
-
     tsv = pmv_ppd_ashrae(
         tdb=tdb,
         tr=tr,
@@ -126,6 +118,7 @@ def vertical_tmp_grad_ppd(
         met=met,
         clo=clo,
         model=Models.ashrae_55_2023.value,
+        limit_inputs=False,
     ).pmv
     numerator = np.exp(0.13 * (tsv - 1.91) ** 2 + 0.15 * vertical_tmp_grad - 1.6)
     ppd_val = (numerator / (1 + numerator) - 0.345) * 100
@@ -134,15 +127,30 @@ def vertical_tmp_grad_ppd(
     if round_output:
         ppd_val = np.round(ppd_val, 1)
 
-    all_valid = ~(
-        np.isnan(tdb_valid)
-        | np.isnan(tr_valid)
-        | np.isnan(v_valid)
-        | np.isnan(met_valid)
-        | np.isnan(clo_valid)
-    )
+    if limit_inputs:
+        (
+            tdb_valid,
+            tr_valid,
+            met_valid,
+            clo_valid,
+            v_limited_valid,
+        ) = _check_ashrae55_compliance(
+            tdb=tdb,
+            tr=tr,
+            v_limited=vr,
+            met=met,
+            clo=clo,
+        )
 
-    ppd_val = np.where(all_valid, ppd_val, np.nan)
-    acceptability = np.where(all_valid, acceptability, np.nan)
+        all_valid = ~(
+            np.isnan(tdb_valid)
+            | np.isnan(tr_valid)
+            | np.isnan(met_valid)
+            | np.isnan(clo_valid)
+            | np.isnan(v_limited_valid)
+        )
+
+        ppd_val = np.where(all_valid, ppd_val, np.nan)
+        acceptability = np.where(all_valid, acceptability, np.nan)
 
     return VerticalTGradPPD(ppd_vg=ppd_val, acceptability=acceptability)

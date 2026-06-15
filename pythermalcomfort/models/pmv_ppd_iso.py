@@ -9,7 +9,6 @@ from pythermalcomfort.shared_functions import mapping, valid_range
 from pythermalcomfort.utilities import (
     Models,
     Units,
-    _check_standard_compliance_array,
     units_converter,
 )
 
@@ -131,7 +130,6 @@ def pmv_ppd_iso(
         )
         print(result.pmv)  # [-0.  0.41]
         print(result.ppd)  # [5.  8.5]
-
     """
     # Validate inputs using the PMVPPDInputs class
     PMVPPDInputs(
@@ -163,30 +161,21 @@ def pmv_ppd_iso(
             "PMV calculations can only be performed in compliance with ISO 7730-2005",
         )
 
-    (
-        tdb_valid,
-        tr_valid,
-        v_valid,
-        met_valid,
-        clo_valid,
-    ) = _check_standard_compliance_array(
-        standard=Models.iso_7730_2005.value,
-        tdb=tdb,
-        tr=tr,
-        v=vr,
-        met=met,
-        clo=clo,
-    )
-
-    pmv_array = _pmv_ppd_optimized(tdb, tr, vr, rh, met, clo, wme)
+    pmv = _pmv_ppd_optimized(tdb, tr, vr, rh, met, clo, wme)
 
     ppd_array = 100.0 - 95.0 * np.exp(
-        -0.03353 * pmv_array**4.0 - 0.2179 * pmv_array**2.0,
+        -0.03353 * pmv**4.0 - 0.2179 * pmv**2.0,
     )
 
     # Checks that inputs are within the bounds accepted by the model if not return nan
     if limit_inputs:
-        pmv_valid = valid_range(pmv_array, (-2, 2))  # this is the ISO limit
+        # ISO 7730-2005 page 3 applicability limits
+        tdb_valid = valid_range(tdb, (10.0, 30.0))
+        tr_valid = valid_range(tr, (10.0, 40.0))
+        v_valid = valid_range(vr, (0.0, 1.0))
+        met_valid = valid_range(met, (0.8, 4.0))
+        clo_valid = valid_range(clo, (0.0, 2.0))
+        pmv_valid = valid_range(pmv, (-2, 2))
 
         all_valid = ~(
             np.isnan(tdb_valid)
@@ -196,11 +185,11 @@ def pmv_ppd_iso(
             | np.isnan(clo_valid)
             | np.isnan(pmv_valid)
         )
-        pmv_array = np.where(all_valid, pmv_array, np.nan)
+        pmv = np.where(all_valid, pmv, np.nan)
         ppd_array = np.where(all_valid, ppd_array, np.nan)
 
     if round_output:
-        pmv_array = np.round(pmv_array, 2)
+        pmv = np.round(pmv, 2)
         ppd_array = np.round(ppd_array, 1)
 
     thermal_sensation = {
@@ -214,7 +203,7 @@ def pmv_ppd_iso(
     }
 
     return PMVPPD(
-        pmv=pmv_array,
+        pmv=pmv,
         ppd=ppd_array,
-        tsv=mapping(pmv_array, thermal_sensation, right=False),
+        tsv=mapping(pmv, thermal_sensation, right=False),
     )

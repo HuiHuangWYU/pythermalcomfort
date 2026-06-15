@@ -79,3 +79,73 @@ def test_nan_values_for_invalid_inputs() -> None:
     # Check that the acceptability flags are False
     assert result.acceptability_80 == False
     assert result.acceptability_90 == False
+
+
+def test_round_output_default_preserves_behaviour() -> None:
+    """Default call must match an explicit round_output=True call."""
+    default_result = adaptive_ashrae(tdb=25, tr=25, t_running_mean=21.5, v=0.1)
+    explicit_result = adaptive_ashrae(
+        tdb=25,
+        tr=25,
+        t_running_mean=21.5,
+        v=0.1,
+        round_output=True,
+    )
+
+    assert default_result.tmp_cmf == explicit_result.tmp_cmf
+    assert default_result.tmp_cmf_80_low == explicit_result.tmp_cmf_80_low
+    assert default_result.tmp_cmf_80_up == explicit_result.tmp_cmf_80_up
+    assert default_result.tmp_cmf_90_low == explicit_result.tmp_cmf_90_low
+    assert default_result.tmp_cmf_90_up == explicit_result.tmp_cmf_90_up
+
+
+def test_round_output_false_returns_unrounded() -> None:
+    """round_output=False must return unrounded t_cmf at full precision."""
+    # 0.31 * 21.5 + 17.8 = 24.465; rounded to 1 dp this is 24.5.
+    unrounded = adaptive_ashrae(
+        tdb=25,
+        tr=25,
+        t_running_mean=21.5,
+        v=0.1,
+        round_output=False,
+    )
+    rounded = adaptive_ashrae(
+        tdb=25,
+        tr=25,
+        t_running_mean=21.5,
+        v=0.1,
+        round_output=True,
+    )
+
+    assert np.isclose(unrounded.tmp_cmf, 24.465)
+    assert np.isclose(rounded.tmp_cmf, 24.5)
+    assert unrounded.tmp_cmf != rounded.tmp_cmf
+
+
+def test_round_output_false_propagates_to_bounds() -> None:
+    """Unrounded t_cmf must propagate into the derived comfort bounds."""
+    unrounded = adaptive_ashrae(
+        tdb=25,
+        tr=25,
+        t_running_mean=21.5,
+        v=0.1,
+        round_output=False,
+    )
+
+    # tmp_cmf_80_low = t_cmf - 3.5; with unrounded t_cmf=24.465 this is 20.965.
+    assert np.isclose(unrounded.tmp_cmf_80_low, 24.465 - 3.5)
+    assert np.isclose(unrounded.tmp_cmf_90_low, 24.465 - 2.5)
+    assert np.isclose(unrounded.tmp_cmf_80_up, 24.465 + 3.5)
+    assert np.isclose(unrounded.tmp_cmf_90_up, 24.465 + 2.5)
+
+
+def test_round_output_invalid_type_raises() -> None:
+    """A non-boolean round_output must raise TypeError."""
+    with pytest.raises(TypeError):
+        adaptive_ashrae(
+            tdb=25,
+            tr=25,
+            t_running_mean=20,
+            v=0.1,
+            round_output="yes",
+        )

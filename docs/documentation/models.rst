@@ -259,8 +259,7 @@ ASHRAE 55 - PMV and PPD
 
 .. autofunction:: pythermalcomfort.models.pmv_ppd_ashrae.pmv_ppd_ashrae
 
-.. autoclass:: pythermalcomfort.classes_return.PMVPPD
-    :noindex:
+.. autoclass:: pythermalcomfort.classes_return.PMVPPDAshrae
     :members:
 
 Adaptive Predicted Mean Vote (aPMV)
@@ -287,12 +286,31 @@ Adjusted Predicted Mean Votes with Expectancy Factor (ePMV)
 .. autoclass:: pythermalcomfort.classes_return.EPMV
     :members:
 
+Ridge Regression to predict Rectal and Skin Temperatures
+--------------------------------------------------------
+
+.. autofunction:: pythermalcomfort.models.ridge_regression_predict_t_re_t_sk.ridge_regression_predict_t_re_t_sk
+
+.. autoclass:: pythermalcomfort.classes_return.PredictedBodyTemperatures
+    :members:
+
 Solar gain on people
 --------------------
 
 .. autofunction:: pythermalcomfort.models.solar_gain.solar_gain
 
 .. autoclass:: pythermalcomfort.classes_return.SolarGain
+    :members:
+
+Sports Heat Stress Risk
+------------------------
+
+.. autofunction:: pythermalcomfort.models.sports_heat_stress_risk.sports_heat_stress_risk
+
+.. autoclass:: pythermalcomfort.models.sports_heat_stress_risk.Sports
+    :members:
+
+.. autoclass:: pythermalcomfort.classes_return.SportsHeatStressRisk
     :members:
 
 Standard Effective Temperature (SET)

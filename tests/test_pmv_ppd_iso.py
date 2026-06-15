@@ -122,6 +122,19 @@ class TestPmvPpd:
             PMVPPD(pmv=np.float64(2.4), ppd=np.float64(91.0), tsv="Warm"),
         )
 
+    def test_no_compliance_attribute(self) -> None:
+        """Test that ISO result does not have a compliance attribute."""
+        result = pmv_ppd_iso(
+            tdb=25,
+            tr=25,
+            vr=0.1,
+            rh=50,
+            met=1.4,
+            clo=0.5,
+            model=Models.iso_7730_2005.value,
+        )
+        assert not hasattr(result, "compliance")
+
     def test_wrong_standard(self) -> None:
         """Test that the function raises ValueError for an unsupported standard."""
         with pytest.raises(ValueError):

@@ -3,14 +3,14 @@ from __future__ import annotations
 import numpy as np
 
 from pythermalcomfort.classes_input import PMVPPDInputs
-from pythermalcomfort.classes_return import PMVPPD
+from pythermalcomfort.classes_return import PMVPPDAshrae
 from pythermalcomfort.models._pmv_ppd_optimized import _pmv_ppd_optimized
 from pythermalcomfort.models.cooling_effect import cooling_effect
 from pythermalcomfort.shared_functions import _finalize_scalar_or_array, mapping
 from pythermalcomfort.utilities import (
     Models,
     Units,
-    _check_standard_compliance_array,
+    _check_ashrae55_compliance,
     units_converter,
 )
 
@@ -28,7 +28,7 @@ def pmv_ppd_ashrae(
     limit_inputs: bool = True,
     airspeed_control: bool = True,
     round_output: bool = True,
-) -> PMVPPD:
+) -> PMVPPDAshrae:
     """Return Predicted Mean Vote (PMV) and Predicted Percentage of Dissatisfied (PPD)
     calculated in accordance with the ASHRAE 55 Standard.
 
@@ -81,8 +81,8 @@ def pmv_ppd_ashrae(
 
         .. note::
             By default, if the inputs are outside the standard applicability limits, the
-            function returns nan. If False returns pmv and ppd values even if input values are
-            outside the applicability limits of the model.
+            function returns NaN. If False returns pmv and ppd
+            values even if input values are outside the applicability limits of the model.
 
             The ASHRAE 55 2020 limits are 10 < tdb [°C] < 40, 10 < tr [°C] < 40,
             0 < vr [m/s] < 2, 1 < met [met] < 4, and 0 < clo [clo] < 1.5.
@@ -99,11 +99,11 @@ def pmv_ppd_ashrae(
 
     Returns
     -------
-    PMVPPD
+    PMVPPDAshrae
         A dataclass containing the Predicted Mean Vote and Predicted Percentage of
-        Dissatisfied. See :py:class:`~pythermalcomfort.classes_return.PMVPPD` for
+        Dissatisfied. See :py:class:`~pythermalcomfort.classes_return.PMVPPDAshrae` for
         more details. To access the `pmv`, `ppd`, `tsv`, and `compliance` values, use the corresponding
-        attributes of the returned `PMVPPD` instance, e.g., `result.pmv`, `result.compliance`.
+        attributes of the returned `PMVPPDAshrae` instance, e.g., `result.pmv`, `result.compliance`.
 
     Examples
     --------
@@ -173,22 +173,6 @@ def pmv_ppd_ashrae(
         )
         raise ValueError(error_msg)
 
-    (
-        tdb_valid,
-        tr_valid,
-        v_valid,
-        met_valid,
-        clo_valid,
-    ) = _check_standard_compliance_array(
-        standard=Models.ashrae_55_2023.value,
-        tdb=tdb,
-        tr=tr,
-        v=vr,
-        met=met,
-        clo=clo,
-        airspeed_control=airspeed_control,
-    )
-
     # if v_r is higher than 0.1 follow methodology ASHRAE Appendix H, H3
     ce = np.where(
         vr > 0.1,
@@ -196,11 +180,11 @@ def pmv_ppd_ashrae(
         0.0,
     )
 
-    tdb = tdb - ce
-    tr = tr - ce
-    vr = np.where(ce > 0, 0.1, vr)
+    tdb_ce = tdb - ce
+    tr_ce = tr - ce
+    vr_ce = np.where(ce > 0, 0.1, vr)
 
-    pmv_array = _pmv_ppd_optimized(tdb, tr, vr, rh, met, clo, wme)
+    pmv_array = _pmv_ppd_optimized(tdb_ce, tr_ce, vr_ce, rh, met, clo, wme)
 
     ppd_array = 100.0 - 95.0 * np.exp(
         -0.03353 * pmv_array**4.0 - 0.2179 * pmv_array**2.0,
@@ -211,8 +195,22 @@ def pmv_ppd_ashrae(
     # Ensure object dtype for compliance array
     compliance_array = np.asarray(compliance_array, dtype=object)
 
-    # Checks that inputs are within the bounds accepted by the model if not return nan
     if limit_inputs:
+        (
+            tdb_valid,
+            tr_valid,
+            v_valid,
+            met_valid,
+            clo_valid,
+        ) = _check_ashrae55_compliance(
+            tdb=tdb,
+            tr=tr,
+            v=vr,
+            met=met,
+            clo=clo,
+            airspeed_control=airspeed_control,
+            v_param_name="vr",
+        )
         all_valid = ~(
             np.isnan(tdb_valid)
             | np.isnan(tr_valid)
@@ -239,7 +237,7 @@ def pmv_ppd_ashrae(
         10: "Hot",
     }
 
-    return PMVPPD(
+    return PMVPPDAshrae(
         pmv=pmv_array,
         ppd=ppd_array,
         tsv=mapping(pmv_array, thermal_sensation),

@@ -43,6 +43,7 @@ class Urls(Enum):
     USE_FANS_HEATWAVES = "ts_use_fans_heatwaves.json"
     UTCI = "ts_utci.json"
     WIND_CHILL = "ts_wind_chill.json"
+    WIND_CHILL_TEMPERATURE = "ts_wind_chill_temperature.json"
     PET_STEADY = "ts_pet_steady.json"
     DISCOMFORT_INDEX = "ts_discomfort_index.json"
 

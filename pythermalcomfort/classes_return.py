@@ -6,6 +6,7 @@ from dataclasses import dataclass, fields, is_dataclass
 
 import numpy as np
 import numpy.typing as npt
+from numpy._typing import NDArray
 
 
 class AutoStrMixin:
@@ -418,25 +419,43 @@ class PMVPPD(AutoStrMixin):
         Predicted Percentage of Dissatisfied.
     tsv : str or list of strings
         Predicted thermal sensation vote.
-    compliance : bool or list of bools, optional
-        True if PMV is within the acceptable range (-0.5 < PMV < 0.5) according to
-        ASHRAE Standard 55-2023. Only returned by pmv_ppd_ashrae function.
     """
 
     pmv: float | list[float]
     ppd: float | list[float]
     tsv: float | list[float]
-    compliance: bool | list[bool] | None = None
+
+
+@dataclass(frozen=True, repr=False)
+class PMVPPDAshrae(PMVPPD):
+    """Dataclass to represent the Predicted Mean Vote (PMV) and Predicted Percentage of
+    Dissatisfied (PPD) calculated in accordance with ASHRAE Standard 55.
+
+    Attributes
+    ----------
+    pmv : float or list of floats
+        Predicted Mean Vote.
+    ppd : float or list of floats
+        Predicted Percentage of Dissatisfied.
+    tsv : str or list of strings
+        Predicted thermal sensation vote.
+    compliance : bool or list of bools
+        True if PMV is within the acceptable range (-0.5 < PMV < 0.5) according to
+        ASHRAE Standard 55-2023. When ``limit_inputs=True`` and any input is outside
+        the standard applicability limits, ``compliance`` will be ``nan``.
+    """
+
+    compliance: bool | list[bool]
 
 
 @dataclass(frozen=True, repr=False)
 class PsychrometricValues(AutoStrMixin):
-    p_sat: float | list[float]
-    p_vap: float | list[float]
-    hr: float | list[float]
-    wet_bulb_tmp: float | list[float]
-    dew_point_tmp: float | list[float]
-    h: float | list[float]
+    p_sat: NDArray[np.float64]
+    p_vap: NDArray[np.float64]
+    hr: NDArray[np.float64]
+    wet_bulb_tmp: NDArray[np.float64]
+    dew_point_tmp: NDArray[np.float64]
+    h: NDArray[np.float64]
 
 
 @dataclass(frozen=True, repr=False)
@@ -1009,6 +1028,29 @@ class JOS3Output(AutoStrMixin):
 
 
 @dataclass(frozen=True, repr=False)
+class PredictedBodyTemperatures(AutoStrMixin):
+    """Dataclass for returning predicted temperature history.
+
+    The `duration` mentioned in the shapes below is the `duration` parameter
+    passed to the prediction function.
+
+    Attributes
+    ----------
+    t_re : numpy.ndarray of float, in °C
+        Predicted rectal temperature history.
+        - If scalar inputs are provided, this is a 1D array of shape (`duration`,).
+        - If vector inputs are provided, this is a 2D array of shape (`n_inputs`, `duration`).
+    t_sk : numpy.ndarray of float, in °C
+        Predicted mean skin temperature history.
+        - If scalar inputs are provided, this is a 1D array of shape (`duration`,).
+        - If vector inputs are provided, this is a 2D array of shape (`n_inputs`, `duration`).
+    """
+
+    t_re: np.ndarray
+    t_sk: np.ndarray
+
+
+@dataclass(frozen=True, repr=False)
 class ScaleWindSpeedLog(AutoStrMixin):
     """Dataclass to represent the output of scale_wind_speed_log.
 
@@ -1020,3 +1062,29 @@ class ScaleWindSpeedLog(AutoStrMixin):
     """
 
     v_z2: npt.ArrayLike
+
+
+@dataclass(frozen=True, repr=False)
+class SportsHeatStressRisk(AutoStrMixin):
+    """Dataclass to represent the Sports Heat Stress Risk calculation results.
+
+    Attributes
+    ----------
+    risk_level_interpolated : float or list of floats
+        Interpolated risk level (1.0-4.0), [dimensionless].
+        Risk levels: 1-<2 = low, 2-<3 = moderate, 3-<4 = high, 4 = extreme.
+    t_medium : float or list of floats
+        Temperature threshold for medium risk level, [°C].
+    t_high : float or list of floats
+        Temperature threshold for high risk level, [°C].
+    t_extreme : float or list of floats
+        Temperature threshold for extreme risk level, [°C].
+    recommendation : str or list of str
+        Heat stress management recommendations for the calculated risk level.
+    """
+
+    risk_level_interpolated: float | list[float]
+    t_medium: float | list[float]
+    t_high: float | list[float]
+    t_extreme: float | list[float]
+    recommendation: str | list[str]

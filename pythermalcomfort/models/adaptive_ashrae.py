@@ -6,9 +6,8 @@ from pythermalcomfort.classes_input import ASHRAEInputs
 from pythermalcomfort.classes_return import AdaptiveASHRAE
 from pythermalcomfort.shared_functions import valid_range
 from pythermalcomfort.utilities import (
-    Models,
     Units,
-    _check_standard_compliance_array,
+    _check_ashrae55_compliance,
     adaptive_cooling_effect,
     operative_tmp,
     units_converter,
@@ -25,6 +24,7 @@ def adaptive_ashrae(
     v: float | list[float],
     units: Literal["SI", "IP"] = Units.SI.value,
     limit_inputs: bool = True,
+    round_output: bool = True,
 ) -> AdaptiveASHRAE:
     """Calculate the adaptive thermal comfort based on ASHRAE 55.
 
@@ -61,6 +61,14 @@ def adaptive_ashrae(
         .. note::
             ASHRAE 55 2020 limits: 10 < tdb [°C] < 40, 10 < tr [°C] < 40, 0 < vr [m/s] < 2, 10 < t_running_mean [°C] < 33.5.
 
+    round_output : bool, optional
+        If True, rounds ``t_cmf`` to one decimal place in SI before the comfort bounds are
+        derived, so ``tmp_cmf_80_low``, ``tmp_cmf_80_up``, ``tmp_cmf_90_low`` and
+        ``tmp_cmf_90_up`` inherit that rounding. If False, ``t_cmf`` and the derived bounds
+        are returned at full precision. Under ``units='IP'`` the rounded SI value is then
+        converted to °F, so IP outputs carry the extra decimals from the °C-to-°F conversion.
+        Defaults to True.
+
     Returns
     -------
     AdaptiveASHRAE
@@ -93,7 +101,6 @@ def adaptive_ashrae(
         adaptive_ashrae(tdb=25, tr=25, t_running_mean=9, v=0.1)
         # AdaptiveASHRAE(tmp_cmf=np.float64(nan), ... acceptability_90=array(False))
         # The adaptive thermal comfort model can only be used if the running mean temperature is higher than 10°C.
-
     """
     # Validate inputs using the ASHRAEInputs class
     ASHRAEInputs(
@@ -102,6 +109,7 @@ def adaptive_ashrae(
         t_running_mean=t_running_mean,
         v=v,
         units=units,
+        round_output=round_output,
     )
 
     tdb = np.asarray(tdb)
@@ -118,14 +126,6 @@ def adaptive_ashrae(
             v=v,
         )
 
-    tdb_valid, tr_valid, v_valid = _check_standard_compliance_array(
-        Models.ashrae_55_2023.value,
-        tdb=tdb,
-        tr=tr,
-        v=v,
-    )
-    trm_valid = valid_range(t_running_mean, (10.0, 33.5))
-
     to = operative_tmp(tdb, tr, v, standard=standard)
 
     ce = adaptive_cooling_effect(v, to)
@@ -133,6 +133,12 @@ def adaptive_ashrae(
     t_cmf = SLOPE * t_running_mean + INTERCEPT
 
     if limit_inputs:
+        tdb_valid, tr_valid, v_valid = _check_ashrae55_compliance(
+            tdb=tdb,
+            tr=tr,
+            v=v,
+        )
+        trm_valid = valid_range(t_running_mean, (10.0, 33.5))
         all_valid = ~(
             np.isnan(tdb_valid)
             | np.isnan(tr_valid)
@@ -141,7 +147,8 @@ def adaptive_ashrae(
         )
         t_cmf = np.where(all_valid, t_cmf, np.nan)
 
-    t_cmf = np.around(t_cmf, 1)
+    if round_output:
+        t_cmf = np.around(t_cmf, 1)
 
     tmp_cmf_80_low = t_cmf - 3.5
     tmp_cmf_90_low = t_cmf - 2.5

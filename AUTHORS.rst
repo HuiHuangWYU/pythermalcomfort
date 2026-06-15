@@ -14,12 +14,16 @@ Contributors
 * `Tyler Hoyt`_
 * Chris Mackey
 * `Jonas Kittner`_
+* `Connor Forbes`_
+* `Yehui Huang`_
 
 .. _Federico Tartarini: https://www.linkedin.com/in/federico-tartarini-3991995b/
 .. _Stefano Schiavon: https://www.linkedin.com/in/stefanoschiavon/
 .. _Tyler Hoyt: https://www.linkedin.com/in/tyler-hoyt1/
 .. _Jonas Kittner: https://github.com/jkittner/
 .. _Akihisa Nomoto: https://www.linkedin.com/in/akihisa-nomoto-3b872611b/
+.. _Connor Forbes: https://www.linkedin.com/in/connor-forbes-1a490117b/
+.. _Yehui Huang: https://www.linkedin.com/in/yehuih/
 
 Acknowledgements
 ----------------
@@ -38,9 +42,9 @@ Acknowledgements
 Contact us
 ----------
 
-If you need help, would like to ask a question about the tool, give us a feedback, or suggest a new feature you can now use `GitHub discussions <https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/discussions>`_.
+If you need help, would like to ask a question about the tool, give us a feedback, or suggest a new feature you can now use `GitHub discussions <https://github.com/pythermalcomfort/pythermalcomfort/discussions>`_.
 
 Bug reports
 -----------
 
-You can report bugs or request new features using `GitHub issues <https://github.com/CenterForTheBuiltEnvironment/pythermalcomfort/issues>`_.
+You can report bugs or request new features using `GitHub issues <https://github.com/pythermalcomfort/pythermalcomfort/issues>`_.
