@@ -105,7 +105,7 @@ setup(
         "setuptools",
     ],
     extras_require={
-        "dev": ["pytest", "sphinx", "pythermalcomfort[plots]", "ruff", "docformatter"],
+        "dev": ["pytest", "sphinx", "ruff", "docformatter", "matplotlib>=3.8", "pandas", "seaborn>=0.13"],
         "plots": ["matplotlib>=3.8", "pandas", "seaborn>=0.13"],
     },
     entry_points={
