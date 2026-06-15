@@ -48,7 +48,37 @@ pre-commit run --all-files
 
 ### CI/CD Workflow
 - **Pull Request (development branch)**: Runs format checks and tests on Python 3.10, 3.13
-- **Push to master**: Full test matrix (Python 3.10-3.13 on Ubuntu/macOS/Windows), then publishes to PyPI
+- **Tag `v*rc*` on development**: Runs tests and deploys to TestPyPI
+- **Tag `v*` (non-RC)**: Runs full test matrix and deploys to PyPI
+
+### Release Process
+
+1. **Merge `development` → `master`** via PR and confirm it passes CI.
+2. **Checkout master and pull**:
+   ```bash
+   git checkout master && git pull
+   ```
+3. **Bump to an RC version** (deploys to TestPyPI for verification):
+   ```bash
+   pipenv run bump-my-version bump --new-version X.Y.Zrc1
+   git add -u && git commit -m "Bump version: A.B.C → X.Y.Zrc1"
+   git tag vX.Y.Zrc1 -m "Bump version: A.B.C → X.Y.Zrc1"
+   git push origin master --tags
+   ```
+4. **Verify** the package on TestPyPI and confirm the GitHub Actions `deploy-testpypi` job passed.
+5. **Bump to the final version** (deploys to PyPI):
+   ```bash
+   pipenv run bump-my-version bump --new-version X.Y.Z
+   git add -u && git commit -m "Bump version: X.Y.Zrc1 → X.Y.Z"
+   git tag vX.Y.Z -m "Bump version: X.Y.Zrc1 → X.Y.Z"
+   git push origin master --tags
+   ```
+6. **Confirm** the `Test and publish pythermalcomfort` action succeeded and the package is live on PyPI.
+
+> **Note**: Always tag from `master` after merging, never from `development`.
+> `bump-my-version` may fail to commit if a pre-commit hook (e.g. `ruff format`)
+> modifies a file mid-commit. If that happens, stage the reformatted file manually
+> (`git add <file>`) and commit with the same message before creating the tag.
 
 ## Architecture Overview
 
