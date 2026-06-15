@@ -3,19 +3,19 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
+from matplotlib.colors import to_rgb
+from matplotlib.lines import Line2D
 
 from pythermalcomfort.plots.matplotlib.threshold import (
     OUT_OF_MODEL_LIMITS_COLOR,
     ThresholdPlot,
     ThresholdPlotResult,
 )
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-from matplotlib.colors import to_rgb
-from matplotlib.lines import Line2D
 
 
 @pytest.fixture(autouse=True)
