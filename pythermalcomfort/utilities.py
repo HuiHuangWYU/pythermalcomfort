@@ -1024,9 +1024,9 @@ def operative_tmp(
 
 
 def adaptive_cooling_effect(
-    v: float | list[float],
-    to: float | list[float],
-) -> float | list[float]:
+    v: NumericInput,
+    to: NumericInput,
+) -> NDArray[np.float64]:
     """Return the adaptive model cooling effect for a given air speed and operative temperature.
 
     The cooling effect is non-zero only when operative temperature is at or
