@@ -211,6 +211,41 @@ def psy_ta_rh(
     )
 
 
+def hr_to_rh(
+    hr: float | list[float],
+    tdb: float | list[float],
+    p_atm: float = 101325,
+) -> float | list[float]:
+    """Convert humidity ratio to relative humidity.
+
+    Algebraic inverse of the humidity-ratio formula used in :func:`psy_ta_rh`:
+
+    .. math::
+
+        p_{vap} = \\frac{hr \\cdot p_{atm}}{0.62198 + hr}, \\quad
+        rh = \\frac{p_{vap}}{p_{sat}(t_{db})} \\times 100
+
+    Parameters
+    ----------
+    hr : float or list of floats
+        humidity ratio, [kg water / kg dry air]
+    tdb : float or list of floats
+        air temperature, [°C]
+    p_atm : float
+        atmospheric pressure, [Pa]
+
+    Returns
+    -------
+    rh : float or list of floats
+        relative humidity, [%]
+
+    """
+    hr = np.asarray(hr)
+    tdb = np.asarray(tdb)
+    p_vap = hr * p_atm / (0.62198 + hr)
+    return p_vap / p_sat(tdb) * 100.0
+
+
 def wet_bulb_tmp(
     tdb: NumericInput,
     rh: NumericInput,
@@ -986,6 +1021,35 @@ def operative_tmp(
         f"Received standard: {standard}"
     )
     raise ValueError(error_message)
+
+
+def adaptive_cooling_effect(
+    v: float | list[float],
+    to: float | list[float],
+) -> float | list[float]:
+    """Return the adaptive model cooling effect for a given air speed and operative temperature.
+
+    The cooling effect is non-zero only when operative temperature is at or
+    above 25 °C **and** air speed meets the minimum threshold (0.6 m/s).
+
+    Parameters
+    ----------
+    v : float or array-like
+        Air speed, [m/s].
+    to : float or array-like
+        Operative temperature, [°C].
+
+    Returns
+    -------
+    ce : float or ndarray
+        Cooling effect magnitude, [°C].
+    """
+    v = np.asarray(v, dtype=float)
+    to = np.asarray(to, dtype=float)
+    magnitude = np.where(
+        v >= 1.2, 2.2, np.where(v >= 0.9, 1.8, np.where(v >= 0.6, 1.2, 0.0))
+    )
+    return np.where(to >= 25.0, magnitude, 0.0)
 
 
 def clo_intrinsic_insulation_ensemble(

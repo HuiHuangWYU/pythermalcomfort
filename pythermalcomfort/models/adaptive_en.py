@@ -5,7 +5,15 @@ import numpy as np
 from pythermalcomfort.classes_input import ENInputs, NumericInput
 from pythermalcomfort.classes_return import AdaptiveEN
 from pythermalcomfort.shared_functions import valid_range
-from pythermalcomfort.utilities import Units, operative_tmp, units_converter
+from pythermalcomfort.utilities import (
+    Units,
+    adaptive_cooling_effect,
+    operative_tmp,
+    units_converter,
+)
+
+SLOPE: float = 0.33
+INTERCEPT: float = 18.8
 
 
 def adaptive_en(
@@ -109,13 +117,9 @@ def adaptive_en(
 
     to = operative_tmp(tdb, tr, v, standard=standard)
 
-    # Calculate cooling effect (ce) of elevated air speed when top > 25 degC.
-    ce = np.where((v >= 0.6) & (to >= 25.0), 999, 0)
-    ce = np.where((v < 0.9) & (ce == 999), 1.2, ce)
-    ce = np.where((v < 1.2) & (ce == 999), 1.8, ce)
-    ce = np.where(ce == 999, 2.2, ce)
+    ce = adaptive_cooling_effect(v, to)
 
-    t_cmf = 0.33 * t_running_mean + 18.8
+    t_cmf = SLOPE * t_running_mean + INTERCEPT
 
     if limit_inputs:
         trm_valid = valid_range(t_running_mean, (10.0, 33.5))

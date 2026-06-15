@@ -328,6 +328,6 @@ Where to get help
   `Full documentation <https://pythermalcomfort.readthedocs.io/en/latest>`_
 
 License
-=======
+-------
 
 pythermalcomfort is released under the MIT License.
