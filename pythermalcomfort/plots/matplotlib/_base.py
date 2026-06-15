@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from typing import Any
 
 import numpy as np
@@ -14,7 +14,6 @@ from pythermalcomfort.plots.matplotlib._shared import (
     RegionConfig,
     _apply_default_links_to_kwargs,
     _AxisConfig,
-    _configure_regions,
     _extract_output_by_name,
     _inspect_model_signature,
     _parse_axis_range,
@@ -38,46 +37,6 @@ class BasePlot(ABC):
 
     def __init__(self) -> None:
         self._region_config: RegionConfig | None = None
-
-    def set_regions(
-        self,
-        *,
-        output: str,
-        thresholds: Sequence[float],
-        labels: Sequence[str] | None = None,
-        colors: Sequence[str] | None = None,
-    ) -> BasePlot:
-        """Configure output regions.
-
-        Parameters
-        ----------
-        output : str
-            Output field or column name.
-        thresholds : sequence of float
-            Numeric boundary values that divide the output range into regions.
-        labels : sequence of str, optional
-            Region labels.  Must have length ``len(thresholds) + 1`` when
-            provided.
-        colors : sequence of str, optional
-            Region colors.  Must have length ``len(thresholds) + 1`` when
-            provided.
-
-        Returns
-        -------
-        BasePlot
-            Self, to support method chaining.
-
-        Raises
-        ------
-        TypeError
-            If ``output`` is not a string.
-        ValueError
-            If output name is empty, or thresholds/labels/colors are invalid.
-        """
-        self._region_config = _configure_regions(
-            output=output, thresholds=thresholds, labels=labels, colors=colors
-        )
-        return self
 
     @abstractmethod
     def plot(

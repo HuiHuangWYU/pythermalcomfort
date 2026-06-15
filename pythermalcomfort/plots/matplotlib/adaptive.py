@@ -344,9 +344,9 @@ class AdaptivePlot(BasePlot):
         """Configure which comfort bands are displayed and their appearance.
 
         Accepts either a pre-built :class:`RegionsConfig` or raw parameters.
-        ``output`` and numeric ``thresholds`` do not apply here — bands are
-        identified by key (e.g. ``"80"`` or ``"cat_i"``) and their boundaries
-        are defined by the standard.
+        Unlike :meth:`BasePlot.set_regions`, bands are identified by standard
+        key (e.g. ``"80"`` or ``"cat_i"``) — ``output`` and numeric
+        ``thresholds`` do not apply here.
 
         Parameters
         ----------
@@ -476,9 +476,6 @@ class AdaptivePlot(BasePlot):
         """
         with mpl.rc_context(_PYTHERMALCOMFORT_RC):
             bands = self._resolve_bands()
-
-            slope: float = self._cfg["slope"]
-            intercept: float = self._cfg["intercept"]
 
             if ax is None:
                 fig, ax = plt.subplots(figsize=_PlotDefaults.figsize)

@@ -19,6 +19,7 @@ from pythermalcomfort.plots.matplotlib._base import BasePlot
 from pythermalcomfort.plots.matplotlib._shared import (
     _PYTHERMALCOMFORT_RC,
     BasePlotResult,
+    _configure_regions,
     _is_light_color,
     _PlotDefaults,
 )
@@ -395,7 +396,7 @@ class SummaryPlot(BasePlot):
         """
         output_name = _validate_output_column(self._df, output)
         _validate_output_values(self._df, output_name)
-        super().set_regions(
+        self._region_config = _configure_regions(
             output=output_name,
             thresholds=thresholds,
             labels=labels,

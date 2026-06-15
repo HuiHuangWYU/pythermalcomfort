@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -20,6 +20,7 @@ from pythermalcomfort.plots.matplotlib._base import GridBasePlot
 from pythermalcomfort.plots.matplotlib._shared import (
     _PYTHERMALCOMFORT_RC,
     BasePlotResult,
+    _configure_regions,
     _PlotDefaults,
 )
 
@@ -110,6 +111,46 @@ class ThresholdPlot(GridBasePlot):
         )
         result.ax.set_xlabel("Air temperature [°C]")
     """
+
+    def set_regions(
+        self,
+        *,
+        output: str,
+        thresholds: Sequence[float],
+        labels: Sequence[str] | None = None,
+        colors: Sequence[str] | None = None,
+    ) -> ThresholdPlot:
+        """Configure output regions.
+
+        Parameters
+        ----------
+        output : str
+            Output field or column name.
+        thresholds : sequence of float
+            Numeric boundary values that divide the output range into regions.
+        labels : sequence of str, optional
+            Region labels.  Must have length ``len(thresholds) + 1`` when
+            provided.
+        colors : sequence of str, optional
+            Region colors.  Must have length ``len(thresholds) + 1`` when
+            provided.
+
+        Returns
+        -------
+        ThresholdPlot
+            Self, to support method chaining.
+
+        Raises
+        ------
+        TypeError
+            If ``output`` is not a string.
+        ValueError
+            If output name is empty, or thresholds/labels/colors are invalid.
+        """
+        self._region_config = _configure_regions(
+            output=output, thresholds=thresholds, labels=labels, colors=colors
+        )
+        return self
 
     def _validate_invalid_color(self, invalid_color: str) -> None:
         """Validate color used to render out-of-model areas."""
