@@ -30,6 +30,9 @@ version = release = "4.0.0"
 
 autodoc_typehints = "none"
 
+# Disable LaTeX/PDF output — ReadTheDocs fails when multiple PDF files are generated.
+latex_documents = []
+
 # External URLs we cannot fix.
 linkcheck_ignore = [
     # LinkedIn blocks automated requests (always 404 from bots).
