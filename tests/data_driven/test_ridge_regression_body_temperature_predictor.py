@@ -44,7 +44,7 @@ def test_ridge_regression_inverse_scale_output():
     np.testing.assert_allclose(inversed, expected, rtol=1e-6)
 
 
-@pytest.mark.parametrize("sex_in", [Sex.male, Sex.male.value, "male"])
+@pytest.mark.parametrize("sex_in", [Sex.male, Sex.male.value])
 def test_ridge_regression_scalar_parametrised(sex_in):
     """Test the model with scalar inputs."""
     duration = 540

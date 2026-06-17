@@ -1,6 +1,48 @@
 Changelog
 =========
 
+4.0.1 (2026-06-17)
+------------------
+
+* Added Python 3.14 support. Removed ``pytest-travis-fold`` (unmaintained,
+  incompatible with Python 3.14) and lifted the ``pytest<7`` cap.
+* Fixed duplicate parametrize IDs in the ridge-regression test suite,
+  which pytest 9 now rejects (``ast.Str`` was removed in Python 3.14).
+
+4.0.0 (2026-06-16)
+------------------
+
+.. note::
+    Version 4.0.0 introduces a new **Matplotlib plotting API** under
+    ``pythermalcomfort.plots.matplotlib``. All four plot classes follow a
+    fluent builder pattern — chain setter calls and finish with ``.plot()``
+    to receive standard Matplotlib ``Figure`` / ``Axes`` handles for full
+    customisation.
+
+**New plotting module** (``pythermalcomfort.plots.matplotlib``)
+
+* ``ThresholdPlot`` — shade comfort/stress regions on any two-axis chart
+  (e.g. operative temperature vs. relative humidity, temperature vs. air
+  speed). Configure regions via ``set_regions(thresholds, labels, colors)``.
+* ``SummaryPlot`` — horizontal or vertical bar-summary chart built from a
+  ``pandas.DataFrame``; useful for comparing multiple spaces or scenarios at
+  a glance.
+* ``AdaptivePlot`` — ready-made adaptive comfort chart for ASHRAE 55 and
+  EN 16798, with configurable comfort bands.
+* ``PsychrometricPlot`` — psychrometric chart with overlaid comfort regions.
+
+All classes share a common ``BasePlot`` base and centralised visual defaults
+(``_shared.py``), making it easy to apply a consistent house style.
+
+**Other changes**
+
+* Refactored type hints across model function signatures to use a
+  ``NumericInput`` alias (``float | int | np.floating | np.integer``),
+  improving IDE auto-complete and static-analysis accuracy.
+* Added ``hr_to_rh`` utility for humidity-ratio → relative-humidity
+  conversion.
+* Minor cooling-effect calculation streamlining and constant centralisation.
+
 3.9.8 (2026-05-25)
 ------------------
 
