@@ -47,25 +47,25 @@ pre-commit run --all-files
 ```
 
 ### CI/CD Workflow
-- **Pull Request (development branch)**: Runs format checks and tests on Python 3.10, 3.13
+- **Pull Request (development branch)**: Runs format checks and tests on Python 3.10, 3.13, 3.14
 - **Tag `v*rc*` on development**: Runs tests and deploys to TestPyPI
-- **Tag `v*` (non-RC)**: Runs full test matrix and deploys to PyPI
+- **Tag `v*` (non-RC) on master**: Runs full test matrix and deploys to PyPI
 
 ### Release Process
 
-1. **Merge `development` → `master`** via PR and confirm it passes CI.
-2. **Checkout master and pull**:
-   ```bash
-   git checkout master && git pull
-   ```
-3. **Bump to an RC version** (deploys to TestPyPI for verification):
+1. **On `development`**, bump to an RC version (deploys to TestPyPI for verification):
    ```bash
    pipenv run bump-my-version bump --new-version X.Y.Zrc1
    git add -u && git commit -m "Bump version: A.B.C → X.Y.Zrc1"
    git tag vX.Y.Zrc1 -m "Bump version: A.B.C → X.Y.Zrc1"
-   git push origin master --tags
+   git push origin development --tags
    ```
-4. **Verify** the package on TestPyPI and confirm the GitHub Actions `deploy-testpypi` job passed.
+2. **Verify** the package on TestPyPI and confirm the GitHub Actions `deploy-testpypi` job passed.
+3. **Merge `development` → `master`** via PR and confirm CI passes.
+4. **Checkout master and pull**:
+   ```bash
+   git checkout master && git pull
+   ```
 5. **Bump to the final version** (deploys to PyPI):
    ```bash
    pipenv run bump-my-version bump --new-version X.Y.Z
@@ -75,7 +75,8 @@ pre-commit run --all-files
    ```
 6. **Confirm** the `Test and publish pythermalcomfort` action succeeded and the package is live on PyPI.
 
-> **Note**: Always tag from `master` after merging, never from `development`.
+> **Note**: RC tags (`v*rc*`) must be created from `development` — the CI workflow enforces
+> this with a `merge-base` check. Final release tags (`v*`) must be created from `master`.
 > `bump-my-version` may fail to commit if a pre-commit hook (e.g. `ruff format`)
 > modifies a file mid-commit. If that happens, stage the reformatted file manually
 > (`git add <file>`) and commit with the same message before creating the tag.
