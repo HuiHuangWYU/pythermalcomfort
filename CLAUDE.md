@@ -21,7 +21,7 @@ pytest -k "pmv"
 # Run with coverage
 pytest tests/ --cov --cov-report=term-missing -vv
 
-# Full test suite via tox (tests Python 3.10-3.13)
+# Full test suite via tox (tests Python 3.10-3.14)
 tox
 ```
 
@@ -53,7 +53,9 @@ pre-commit run --all-files
 
 ### Release Process
 
-1. **On `development`**, bump to an RC version (deploys to TestPyPI for verification):
+1. **Update ``CHANGELOG.rst``** with all changes since the last release, then commit.
+
+2. **On `development`**, bump to an RC version (deploys to TestPyPI for verification):
    ```bash
    pipenv run bump-my-version bump --new-version X.Y.Zrc1
    git add -u && git commit -m "Bump version: A.B.C → X.Y.Zrc1"
@@ -254,7 +256,7 @@ def pmv_ppd_iso(
 - Run `ruff format` and `ruff check --fix` for code style
 - Run `docformatter` for docstring formatting
 - Add/update docstrings with NumPy style
-- Update CHANGELOG.rst if applicable
+- **Update CHANGELOG.rst** with all user-facing changes (required before release)
 - Ensure new functions have parameter and return type hints
 
 ## Key Files Reference
