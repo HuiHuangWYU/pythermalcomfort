@@ -261,6 +261,7 @@ def _calc_risk_single_value(
             min_t_extreme,
             _get_recommendation(1.0),
         )
+
     def calculate_threshold_water_loss(x):
         sl = phs(
             tdb=x,
@@ -358,9 +359,7 @@ def _calc_risk_single_value(
     elif t_medium <= tdb < t_high:
         risk_level_interpolated = 2.0 + (tdb - t_medium) / (t_high - t_medium)
     elif t_high <= tdb < extreme_entry_t:
-        risk_level_interpolated = 3.0 + (tdb - t_high) / (
-            extreme_entry_t - t_high
-        )
+        risk_level_interpolated = 3.0 + (tdb - t_high) / (extreme_entry_t - t_high)
     elif tdb >= extreme_entry_t:
         risk_level_interpolated = 4.0 + (tdb - extreme_entry_t) / (
             t_upper_extreme - extreme_entry_t
