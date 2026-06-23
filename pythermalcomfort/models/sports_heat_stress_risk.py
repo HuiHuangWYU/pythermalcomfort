@@ -244,6 +244,8 @@ def _calc_risk_single_value(
     max_t_low = 34.5  # maximum tdb for low risk
     max_t_medium = 39  # maximum tdb for medium risk
     max_t_high = 43.5  # maximum tdb for high risk
+    # risk 4.9 is reached 5°C above the humidity-dependent extreme threshold
+    t_upper_extreme_delta = 5.0
     min_t_low = 21  # minimum tdb for low risk
     min_t_medium = 23  # minimum tdb for medium risk
     min_t_high = 25  # minimum tdb for high risk
@@ -259,15 +261,6 @@ def _calc_risk_single_value(
             min_t_high,
             min_t_extreme,
             _get_recommendation(1.0),
-        )
-    if tdb > max_t_high:
-        # Extreme risk - use maximum thresholds and risk level 4
-        return (
-            4.0,
-            max_t_low,
-            max_t_medium,
-            max_t_high,
-            _get_recommendation(4.0),
         )
 
     def calculate_threshold_water_loss(x):
@@ -359,22 +352,23 @@ def _calc_risk_single_value(
     if t_medium < min_t_medium:
         t_medium = min_t_medium
 
+    extreme_entry_t = min(t_extreme, max_t_high)
     risk_level_interpolated = np.nan
     # calculate the risk level with one decimal place
     if min_t_low <= tdb < t_medium:
         risk_level_interpolated = 1.0 + (tdb - min_t_medium) / (t_medium - min_t_medium)
     elif t_medium <= tdb < t_high:
         risk_level_interpolated = 2.0 + (tdb - t_medium) / (t_high - t_medium)
-    elif t_high <= tdb < t_extreme:
-        risk_level_interpolated = 3.0 + (tdb - t_high) / (t_extreme - t_high)
-    elif tdb >= t_extreme:
-        risk_level_interpolated = 4.0
+    elif t_high <= tdb < extreme_entry_t:
+        risk_level_interpolated = 3.0 + (tdb - t_high) / (extreme_entry_t - t_high)
+    elif tdb >= extreme_entry_t:
+        risk_level_interpolated = 4.0 + (tdb - extreme_entry_t) / t_upper_extreme_delta
 
     if np.isnan(risk_level_interpolated):
         raise ValueError("Risk level could not be determined due to NaN thresholds.")
 
     # Truncate to one decimal place toward negative infinity.
-    risk_level_floor = np.floor(risk_level_interpolated * 10.0) / 10.0
+    risk_level_floor = min(np.floor(risk_level_interpolated * 10.0) / 10.0, 4.9)
 
     # Generate recommendation based on the FLOORED risk level for consistency
     recommendation = _get_recommendation(risk_level_floor)
@@ -394,7 +388,7 @@ def _get_recommendation(risk_level: float) -> str:
     Parameters
     ----------
     risk_level : float
-        Interpolated risk level (1.0-4.0).
+        Interpolated risk level (1.0-4.9).
 
     Returns
     -------

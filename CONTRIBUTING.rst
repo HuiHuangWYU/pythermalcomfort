@@ -58,6 +58,7 @@ Setting up your development environment:
     cd pythermalcomfort
     git remote add upstream git@github.com:pythermalcomfort/pythermalcomfort.git
     git fetch upstream
+    git checkout development
 
 2. Set up a virtual environment and install dependencies, you should have Python 3.12+ installed and `pipenv <https://pipenv.pypa.io/en/latest/>`_ available:
 
@@ -66,7 +67,7 @@ Setting up your development environment:
     pip install pipenv
     pipenv sync --dev
 
-3. Create a feature branch (use the naming rules below):
+3. Create a feature branch based on the development branch, with a descriptive name for example:
 
 .. code-block:: bash
 
@@ -145,6 +146,7 @@ Quick checklist (use before opening a PR)
 - [ ] All tests pass and formatting/linting applied.
 - [ ] Add the function to ``__init__.py`` which is located in the ``pythermalcomfort/models/`` folder.
 - [ ] The function should accept both scalar and vectorized inputs (lists, numpy arrays) and return outputs of matching shape.
+- [ ] Optional but important: optimise for performance using Numba and NumPy vectorized operations.
 
 Step-by-step guide
 ------------------
@@ -276,6 +278,23 @@ As a convention, functions should return structured dataclasses where applicable
 
 - Add a short line to the changelog describing the new function.
 - Optionally add yourself to AUTHORS.rst when contributing a new feature.
+
+Release process (maintainers only)
+===================================
+
+After each release, the version-bump commit on ``master`` must be merged back
+into ``development`` so the two branches stay in sync:
+
+.. code-block:: bash
+
+    git checkout development && git pull
+    git merge origin/master --no-edit
+    git push origin development
+
+Failing to do this means ``development`` will be behind ``master`` and the next
+RC tag will be rejected by the CI ``merge-base`` check.
+
+See ``CLAUDE.md`` for the full step-by-step release process.
 
 8) Formatting, linting and tests locally
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
