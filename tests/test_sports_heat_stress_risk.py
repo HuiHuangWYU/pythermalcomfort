@@ -364,7 +364,8 @@ def test_sports_heat_stress_risk_extreme_interpolation():
         tdb=45.0, tr=20, rh=0, vr=10, sport=Sports.FISHING
     )
     assert mid_result.t_extreme == pytest.approx(43.5, abs=0.01)
-    assert mid_result.risk_level_interpolated == pytest.approx(4.2, abs=0.01)
+    # With t_upper_extreme = t_extreme + 5, risk at tdb=45 is 4.0 + (45 - 43.5) / 5 = 4.3
+    assert mid_result.risk_level_interpolated == pytest.approx(4.3, abs=0.01)
 
     capped_result = sports_heat_stress_risk(
         tdb=50.0, tr=20, rh=0, vr=10, sport=Sports.FISHING

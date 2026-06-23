@@ -244,7 +244,8 @@ def _calc_risk_single_value(
     max_t_low = 34.5  # maximum tdb for low risk
     max_t_medium = 39  # maximum tdb for medium risk
     max_t_high = 43.5  # maximum tdb for high risk
-    t_upper_extreme = 50.0  # upper tdb anchor for interpolating extreme risk
+    # risk 4.9 is reached 5°C above the humidity-dependent extreme threshold
+    t_upper_extreme_delta = 5.0
     min_t_low = 21  # minimum tdb for low risk
     min_t_medium = 23  # minimum tdb for medium risk
     min_t_high = 25  # minimum tdb for high risk
@@ -361,9 +362,7 @@ def _calc_risk_single_value(
     elif t_high <= tdb < extreme_entry_t:
         risk_level_interpolated = 3.0 + (tdb - t_high) / (extreme_entry_t - t_high)
     elif tdb >= extreme_entry_t:
-        risk_level_interpolated = 4.0 + (tdb - extreme_entry_t) / (
-            t_upper_extreme - extreme_entry_t
-        )
+        risk_level_interpolated = 4.0 + (tdb - extreme_entry_t) / t_upper_extreme_delta
 
     if np.isnan(risk_level_interpolated):
         raise ValueError("Risk level could not be determined due to NaN thresholds.")
