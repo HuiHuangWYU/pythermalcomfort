@@ -277,6 +277,23 @@ As a convention, functions should return structured dataclasses where applicable
 - Add a short line to the changelog describing the new function.
 - Optionally add yourself to AUTHORS.rst when contributing a new feature.
 
+Release process (maintainers only)
+===================================
+
+After each release, the version-bump commit on ``master`` must be merged back
+into ``development`` so the two branches stay in sync:
+
+.. code-block:: bash
+
+    git checkout development && git pull
+    git merge origin/master --no-edit
+    git push origin development
+
+Failing to do this means ``development`` will be behind ``master`` and the next
+RC tag will be rejected by the CI ``merge-base`` check.
+
+See ``CLAUDE.md`` for the full step-by-step release process.
+
 8) Formatting, linting and tests locally
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

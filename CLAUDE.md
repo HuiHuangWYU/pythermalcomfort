@@ -76,6 +76,12 @@ pre-commit run --all-files
    git push origin master --tags
    ```
 6. **Confirm** the `Test and publish pythermalcomfort` action succeeded and the package is live on PyPI.
+7. **Sync master back into development** so the version-bump commit is not lost:
+   ```bash
+   git checkout development && git pull
+   git merge origin/master --no-edit
+   git push origin development
+   ```
 
 > **Note**: RC tags (`v*rc*`) must be created from `development` — the CI workflow enforces
 > this with a `merge-base` check. Final release tags (`v*`) must be created from `master`.
