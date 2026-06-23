@@ -58,6 +58,7 @@ Setting up your development environment:
     cd pythermalcomfort
     git remote add upstream git@github.com:pythermalcomfort/pythermalcomfort.git
     git fetch upstream
+    git checkout development
 
 2. Set up a virtual environment and install dependencies, you should have Python 3.12+ installed and `pipenv <https://pipenv.pypa.io/en/latest/>`_ available:
 
@@ -66,7 +67,7 @@ Setting up your development environment:
     pip install pipenv
     pipenv sync --dev
 
-3. Create a feature branch (use the naming rules below):
+3. Create a feature branch based on the development branch, with a descriptive name for example:
 
 .. code-block:: bash
 
@@ -145,6 +146,7 @@ Quick checklist (use before opening a PR)
 - [ ] All tests pass and formatting/linting applied.
 - [ ] Add the function to ``__init__.py`` which is located in the ``pythermalcomfort/models/`` folder.
 - [ ] The function should accept both scalar and vectorized inputs (lists, numpy arrays) and return outputs of matching shape.
+- [ ] Optional but important: optimise for performance using Numba and NumPy vectorized operations.
 
 Step-by-step guide
 ------------------
