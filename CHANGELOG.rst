@@ -1,15 +1,14 @@
 Changelog
 =========
 
-4.0.2 (unreleased)
+4.0.2 (2026-06-23)
 ------------------
 
 * Improved sports heat stress risk interpolation within the extreme range: the
   upper anchor temperature (where risk reaches 4.9) is now computed dynamically
-  as ``t_extreme + 5 °C`` instead of a fixed 50 °C ceiling. This makes the
-  extreme-range scale consistent across humidity conditions — the risk always
-  spans exactly 5 °C above the humidity-dependent extreme threshold regardless
-  of ambient conditions.
+  as ``t_extreme + 5 °C``. This makes the extreme-range scale consistent across
+  humidity conditions — the risk always spans exactly 5 °C above the
+  humidity-dependent extreme threshold regardless of ambient conditions.
 
 4.0.1 (2026-06-17)
 ------------------
